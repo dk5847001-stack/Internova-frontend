@@ -10,6 +10,10 @@ function InternshipDetails() {
   const [selectedDuration, setSelectedDuration] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [certificateEligible, setCertificateEligible] = useState(false);
+  const [certificateExists, setCertificateExists] = useState(false);
+  const [checkingCertificate, setCheckingCertificate] = useState(true);
+
   const user = JSON.parse(localStorage.getItem("user"));
 
   const fetchInternship = async () => {
@@ -24,8 +28,39 @@ function InternshipDetails() {
     }
   };
 
+  const checkCertificateEligibility = async () => {
+    try {
+      setCheckingCertificate(true);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setCertificateEligible(false);
+        setCertificateExists(false);
+        return;
+      }
+
+      const { data } = await API.get(`/certificates/eligibility/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (data.success) {
+        setCertificateEligible(data.eligible);
+        setCertificateExists(data.certificateExists);
+      }
+    } catch (error) {
+      console.error("Eligibility check failed:", error);
+      setCertificateEligible(false);
+      setCertificateExists(false);
+    } finally {
+      setCheckingCertificate(false);
+    }
+  };
+
   useEffect(() => {
     fetchInternship();
+    checkCertificateEligibility();
   }, [id]);
 
   const handleBuyNow = async () => {
@@ -72,6 +107,7 @@ function InternshipDetails() {
 
             if (verifyRes.data.success) {
               alert("Payment successful!");
+              await checkCertificateEligibility();
               navigate("/my-purchases");
             } else {
               alert("Payment verification failed");
@@ -127,6 +163,8 @@ function InternshipDetails() {
             "_blank"
           );
         }
+
+        await checkCertificateEligibility();
       } else {
         alert("Certificate generation failed");
       }
@@ -186,6 +224,12 @@ function InternshipDetails() {
             Price: ₹{selectedPlan ? selectedPlan.price : 0}
           </h4>
 
+          {!checkingCertificate && certificateEligible && (
+            <p className="text-success mt-3 mb-2">
+              You are eligible to claim your certificate.
+            </p>
+          )}
+
           <button
             className="btn btn-success w-100"
             onClick={handleBuyNow}
@@ -194,13 +238,19 @@ function InternshipDetails() {
             {loading ? "Processing..." : "Buy Now"}
           </button>
 
-          <button
-            className="btn btn-dark w-100 mt-3"
-            onClick={handleGenerateCertificate}
-            disabled={loading}
-          >
-            {loading ? "Processing..." : "Generate Certificate"}
-          </button>
+          {!checkingCertificate && certificateEligible && (
+            <button
+              className="btn btn-dark w-100 mt-3"
+              onClick={handleGenerateCertificate}
+              disabled={loading}
+            >
+              {loading
+                ? "Processing..."
+                : certificateExists
+                ? "Download Certificate"
+                : "Generate Certificate"}
+            </button>
+          )}
         </div>
       </div>
     </div>
