@@ -100,6 +100,44 @@ function InternshipDetails() {
     }
   };
 
+  const handleGenerateCertificate = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      const { data } = await API.post(
+        `/certificates/generate/${id}`,
+        {
+          duration: selectedDuration,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (data.success) {
+        alert(data.message || "Certificate generated successfully");
+
+        if (data.certificate?.certificateId) {
+          window.open(
+            `http://localhost:5000/api/certificates/${data.certificate.certificateId}/download`,
+            "_blank"
+          );
+        }
+      } else {
+        alert("Certificate generation failed");
+      }
+    } catch (error) {
+      console.error("Certificate generate error:", error);
+      alert(error.response?.data?.message || "Failed to generate certificate");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!internship) {
     return <div className="container py-5">Loading details...</div>;
   }
@@ -154,6 +192,14 @@ function InternshipDetails() {
             disabled={loading}
           >
             {loading ? "Processing..." : "Buy Now"}
+          </button>
+
+          <button
+            className="btn btn-dark w-100 mt-3"
+            onClick={handleGenerateCertificate}
+            disabled={loading}
+          >
+            {loading ? "Processing..." : "Generate Certificate"}
           </button>
         </div>
       </div>

@@ -7,6 +7,8 @@ import Internships from "./pages/Internships";
 import InternshipDetails from "./pages/InternshipDetails";
 import MyPurchases from "./pages/MyPurchases";
 import ProtectedRoute from "./components/ProtectedRoute";
+import CourseProgress from "./pages/CourseProgress";
+import QuizPage from "./pages/QuizPage";
 
 function App() {
   return (
@@ -14,6 +16,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
         <Route
           path="/dashboard"
           element={
@@ -22,6 +25,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/internships"
           element={
@@ -30,6 +34,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/internships/:id"
           element={
@@ -38,11 +43,30 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/my-purchases"
           element={
             <ProtectedRoute>
               <MyPurchases />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/course/:internshipId"
+          element={
+            <ProtectedRoute>
+              <CourseProgress />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/quiz/:internshipId"
+          element={
+            <ProtectedRoute>
+              <QuizPage />
             </ProtectedRoute>
           }
         />

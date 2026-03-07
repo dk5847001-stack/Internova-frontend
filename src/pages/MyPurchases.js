@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 function MyPurchases() {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   const fetchPurchases = async () => {
     try {
@@ -93,12 +95,28 @@ function MyPurchases() {
                     <strong>Status:</strong> {item.paymentStatus}
                   </p>
 
-                  <button
-                    className="btn btn-dark"
-                    onClick={() => handleDownload(item._id)}
-                  >
-                    Download Offer Letter
-                  </button>
+                  <div className="d-flex gap-2 flex-wrap">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => navigate(`/course/${item.internshipId?._id}`)}
+                    >
+                      Open Course
+                    </button>
+
+                    <button
+                      className="btn btn-dark"
+                      onClick={() => handleDownload(item._id)}
+                    >
+                      Download Offer Letter
+                    </button>
+
+                    <button
+                      className="btn btn-outline-dark"
+                      onClick={() => navigate(`/quiz/${item.internshipId?._id}`)}
+                    >
+                      Mini Test
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
