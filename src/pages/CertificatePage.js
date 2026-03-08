@@ -160,7 +160,8 @@ function CertificatePage() {
           <div
             style={{
               position: "fixed",
-              top: "24px",
+              top: "96px",
+              zIndex: 99999,
               right: "24px",
               zIndex: 9999,
               minWidth: "280px",

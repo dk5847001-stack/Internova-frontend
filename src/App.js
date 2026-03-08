@@ -1,25 +1,38 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Internships from "./pages/Internships";
 import InternshipDetails from "./pages/InternshipDetails";
 import MyPurchases from "./pages/MyPurchases";
-import ProtectedRoute from "./components/ProtectedRoute";
 import CourseProgress from "./pages/CourseProgress";
 import QuizPage from "./pages/QuizPage";
 import CertificatePage from "./pages/CertificatePage";
 import VerifyCertificate from "./pages/VerifyCertificate";
+import AdminInternships from "./pages/AdminInternships";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import AdminInternships from "./pages/AdminInternships";
-import AdminRoute from "./components/AdminRoute";
 
-function App() {
+function AppLayout() {
+  const location = useLocation();
+
+  const hideLayoutRoutes = ["/", "/register"];
+  const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
+
   return (
-    <BrowserRouter>
-      <Navbar />
+    <>
+      {!shouldHideLayout && <Navbar />}
+
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -78,16 +91,9 @@ function App() {
           }
         />
 
-        <Route path="/verify"
-          element={
-            <VerifyCertificate />
-          }
-        />
-        <Route path="/verify/:certificateId"
-          element={
-            <VerifyCertificate />
-          }
-        />
+        <Route path="/verify" element={<VerifyCertificate />} />
+        <Route path="/verify/:certificateId" element={<VerifyCertificate />} />
+
         <Route
           path="/admin/internships"
           element={
@@ -96,6 +102,7 @@ function App() {
             </AdminRoute>
           }
         />
+
         <Route
           path="/quiz/:internshipId"
           element={
@@ -105,7 +112,16 @@ function App() {
           }
         />
       </Routes>
-      <Footer />
+
+      {!shouldHideLayout && <Footer />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppLayout />
     </BrowserRouter>
   );
 }

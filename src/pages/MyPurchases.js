@@ -152,7 +152,8 @@ function MyPurchases() {
           <div
             style={{
               position: "fixed",
-              top: "24px",
+              top: "96px",
+              zIndex: 99999,
               right: "24px",
               zIndex: 9999,
               minWidth: "280px",
@@ -173,9 +174,8 @@ function MyPurchases() {
               }}
             >
               <div
-                className={`fw-bold mb-1 ${
-                  toast.type === "success" ? "text-success" : "text-danger"
-                }`}
+                className={`fw-bold mb-1 ${toast.type === "success" ? "text-success" : "text-danger"
+                  }`}
               >
                 {toast.type === "success" ? "Success" : "Error"}
               </div>
@@ -252,7 +252,7 @@ function MyPurchases() {
               const branch = item.branch || item.internshipId?.branch || "N/A";
               const category =
                 item.category || item.internshipId?.category || "N/A";
-              const internshipId = item.internshipId?._id || item.internshipId;
+              const internshipId = item.internshipId || null;
 
               return (
                 <div className="col-lg-6" key={item._id}>
@@ -396,7 +396,7 @@ function MyPurchases() {
                       <div className="d-grid gap-3">
                         <button
                           className="btn btn-primary btn-lg rounded-4 fw-semibold"
-                          onClick={() => navigate(`/course/${internshipId}`)}
+                          onClick={() => internshipId && navigate(`/course/${internshipId}`)}
                         >
                           Open Course
                         </button>
@@ -417,7 +417,7 @@ function MyPurchases() {
                           <div className="col-md-6">
                             <button
                               className="btn btn-outline-dark w-100 rounded-4 fw-semibold"
-                              onClick={() => navigate(`/quiz/${internshipId}`)}
+                              onClick={() => internshipId && navigate(`/quiz/${internshipId}`)}
                             >
                               Mini Test
                             </button>
@@ -426,9 +426,7 @@ function MyPurchases() {
                           <div className="col-12">
                             <button
                               className="btn btn-outline-success w-100 rounded-4 fw-semibold"
-                              onClick={() =>
-                                navigate(`/certificate/${internshipId}`)
-                              }
+                              onClick={() => internshipId && navigate(`/certificate/${internshipId}`)}
                             >
                               Certificate Dashboard
                             </button>

@@ -87,7 +87,8 @@ function VerifyCertificate() {
           <div
             style={{
               position: "fixed",
-              top: "24px",
+              top: "96px",
+              zIndex: 99999,
               right: "24px",
               zIndex: 9999,
               minWidth: "280px",
@@ -108,9 +109,8 @@ function VerifyCertificate() {
               }}
             >
               <div
-                className={`fw-bold mb-1 ${
-                  toast.type === "success" ? "text-success" : "text-danger"
-                }`}
+                className={`fw-bold mb-1 ${toast.type === "success" ? "text-success" : "text-danger"
+                  }`}
               >
                 {toast.type === "success" ? "Success" : "Error"}
               </div>
@@ -230,18 +230,16 @@ function VerifyCertificate() {
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                   <span
-                    className={`badge px-4 py-2 rounded-pill fs-6 ${
-                      verified ? "bg-success" : "bg-danger"
-                    }`}
+                    className={`badge px-4 py-2 rounded-pill fs-6 ${verified ? "bg-success" : "bg-danger"
+                      }`}
                   >
                     {verified ? "VERIFIED" : "INVALID"}
                   </span>
                 </div>
 
                 <div
-                  className={`fw-bold fs-5 ${
-                    verified ? "text-success" : "text-danger"
-                  }`}
+                  className={`fw-bold fs-5 ${verified ? "text-success" : "text-danger"
+                    }`}
                 >
                   {verified
                     ? "Authentic Internova Certificate"
@@ -357,8 +355,8 @@ function VerifyCertificate() {
                           <div className="fw-semibold text-dark">
                             {result.certificate?.issuedAt
                               ? new Date(
-                                  result.certificate.issuedAt
-                                ).toLocaleString()
+                                result.certificate.issuedAt
+                              ).toLocaleString()
                               : "N/A"}
                           </div>
                         </div>

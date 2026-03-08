@@ -1,16 +1,23 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 function AdminRoute({ children }) {
   const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
+  const location = useLocation();
+
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user"));
+  } catch (error) {
+    user = null;
+  }
 
   if (!token) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
 
   if (user?.role !== "admin") {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

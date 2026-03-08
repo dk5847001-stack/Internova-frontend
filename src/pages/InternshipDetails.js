@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { useParams, useNavigate } from "react-router-dom";
 
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+
 function InternshipDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -14,8 +17,22 @@ function InternshipDetails() {
   const [certificateExists, setCertificateExists] = useState(false);
   const [checkingCertificate, setCheckingCertificate] = useState(true);
 
+  const [toast, setToast] = useState({
+    show: false,
+    type: "success",
+    message: "",
+  });
+
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
+
+  const showToast = (type, message) => {
+    setToast({ show: true, type, message });
+
+    setTimeout(() => {
+      setToast({ show: false, type: "success", message: "" });
+    }, 3000);
+  };
 
   const fetchInternship = async () => {
     try {
@@ -27,7 +44,7 @@ function InternshipDetails() {
       }
     } catch (error) {
       console.error("Failed to fetch internship details:", error);
-      alert("Failed to load internship details");
+      showToast("error", "Failed to load internship details");
     }
   };
 
@@ -49,7 +66,7 @@ function InternshipDetails() {
 
       if (data.success) {
         setCertificateEligible(!!data.eligible);
-        setCertificateExists(!!data.certificateExists);
+        setCertificateExists(!!data.certificate || !!data.certificateExists);
       } else {
         setCertificateEligible(false);
         setCertificateExists(false);
@@ -66,12 +83,13 @@ function InternshipDetails() {
   useEffect(() => {
     fetchInternship();
     checkCertificateEligibility();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleBuyNow = async () => {
     try {
       if (!token) {
-        alert("Please login first");
+        showToast("error", "Please login first");
         navigate("/");
         return;
       }
@@ -115,15 +133,18 @@ function InternshipDetails() {
             );
 
             if (verifyRes.data.success) {
-              alert("Payment successful!");
+              showToast("success", "Payment successful!");
               await checkCertificateEligibility();
               navigate("/my-purchases");
             } else {
-              alert("Payment verification failed");
+              showToast("error", "Payment verification failed");
             }
           } catch (error) {
             console.error("Verification error:", error);
-            alert(error.response?.data?.message || "Payment verification failed");
+            showToast(
+              "error",
+              error.response?.data?.message || "Payment verification failed"
+            );
           }
         },
         prefill: {
@@ -139,7 +160,10 @@ function InternshipDetails() {
       rzp.open();
     } catch (error) {
       console.error("Payment start error:", error);
-      alert(error.response?.data?.message || "Failed to initiate payment");
+      showToast(
+        "error",
+        error.response?.data?.message || "Failed to initiate payment"
+      );
     } finally {
       setLoading(false);
     }
@@ -148,7 +172,7 @@ function InternshipDetails() {
   const handleGenerateCertificate = async () => {
     try {
       if (!token) {
-        alert("Please login first");
+        showToast("error", "Please login first");
         navigate("/");
         return;
       }
@@ -166,29 +190,48 @@ function InternshipDetails() {
       );
 
       if (data.success) {
-        alert(data.message || "Certificate generated successfully");
+        showToast(
+          "success",
+          data.message || "Certificate generated successfully"
+        );
 
         if (data.certificate?.certificateId) {
           window.open(
-            `http://localhost:5000/api/certificates/${data.certificate.certificateId}/download`,
+            `${API_BASE_URL}/certificates/${data.certificate.certificateId}/download`,
             "_blank"
           );
         }
 
         await checkCertificateEligibility();
       } else {
-        alert("Certificate generation failed");
+        showToast("error", "Certificate generation failed");
       }
     } catch (error) {
       console.error("Certificate generate error:", error);
-      alert(error.response?.data?.message || "Failed to generate certificate");
+      showToast(
+        "error",
+        error.response?.data?.message || "Failed to generate certificate"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   if (!internship) {
-    return <div className="container py-5">Loading details...</div>;
+    return (
+      <div
+        className="min-vh-100 d-flex align-items-center justify-content-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%)",
+        }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-dark mb-3" role="status"></div>
+          <div className="fw-semibold text-dark">Loading details...</div>
+        </div>
+      </div>
+    );
   }
 
   const selectedPlan = internship.durations.find(
@@ -196,125 +239,489 @@ function InternshipDetails() {
   );
 
   return (
-    <div className="container py-5">
-      <button
-        className="btn btn-outline-dark mb-4"
-        onClick={() => navigate(-1)}
-      >
-        ← Back
-      </button>
+    <>
+      <style>{`
+        .internship-details-page {
+          min-height: 100vh;
+          background:
+            radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 28%),
+            radial-gradient(circle at bottom right, rgba(99,102,241,0.16), transparent 32%),
+            linear-gradient(135deg, #f8fafc 0%, #eef2ff 48%, #f8fafc 100%);
+          position: relative;
+          overflow: hidden;
+        }
 
-      <div className="card border-0 shadow rounded-4 overflow-hidden">
-        <div className="row g-0">
-          <div className="col-lg-6">
-            <img
-              src={internship.thumbnail || "https://via.placeholder.com/600x350"}
-              alt={internship.title}
-              className="img-fluid w-100 h-100"
-              style={{ objectFit: "cover", minHeight: "100%" }}
-            />
-          </div>
+        .internship-details-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(10px);
+          opacity: 0.55;
+          animation: internshipDetailsFloat 9s ease-in-out infinite;
+          -webkit-animation: internshipDetailsFloat 9s ease-in-out infinite;
+          pointer-events: none;
+        }
 
-          <div className="col-lg-6">
-            <div className="p-4 p-lg-5">
-              <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-                <div>
-                  <h2 className="mb-1">{internship.title}</h2>
-                  <span className="badge bg-secondary">{internship.branch}</span>
-                </div>
+        .internship-details-orb-1 {
+          width: 220px;
+          height: 220px;
+          top: 70px;
+          left: -60px;
+          background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(14,165,233,0.18));
+        }
 
-                <span className="badge bg-dark">{internship.category}</span>
-              </div>
+        .internship-details-orb-2 {
+          width: 280px;
+          height: 280px;
+          right: -80px;
+          bottom: 70px;
+          background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(59,130,246,0.22));
+          animation-delay: 1.2s;
+          -webkit-animation-delay: 1.2s;
+        }
 
-              <p className="text-muted mb-4">{internship.description}</p>
+        .internship-details-shell {
+          position: relative;
+          z-index: 2;
+        }
 
-              <div className="border rounded-4 p-3 bg-light mb-4">
-                <label className="form-label fw-bold mb-2">
-                  Select Duration
-                </label>
-                <select
-                  className="form-select"
-                  value={selectedDuration}
-                  onChange={(e) => setSelectedDuration(e.target.value)}
+        .internship-back-btn {
+          border-radius: 999px;
+          padding: 10px 18px;
+          font-weight: 700;
+          -webkit-transition: all 0.3s ease;
+          transition: all 0.3s ease;
+        }
+
+        .internship-back-btn:hover {
+          transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
+        }
+
+        .internship-main-card {
+          border: 1px solid rgba(255,255,255,0.42);
+          background: rgba(255,255,255,0.72);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          box-shadow:
+            0 24px 70px rgba(15, 23, 42, 0.14),
+            0 8px 24px rgba(59,130,246,0.08);
+          -webkit-box-shadow:
+            0 24px 70px rgba(15, 23, 42, 0.14),
+            0 8px 24px rgba(59,130,246,0.08);
+        }
+
+        .internship-image-wrap {
+          height: 100%;
+          min-height: 420px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .internship-main-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          -webkit-transition: transform 0.6s ease;
+          transition: transform 0.6s ease;
+        }
+
+        .internship-main-card:hover .internship-main-image {
+          transform: scale(1.04);
+          -webkit-transform: scale(1.04);
+        }
+
+        .internship-image-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to top,
+            rgba(8, 18, 38, 0.48) 0%,
+            rgba(8, 18, 38, 0.10) 45%,
+            rgba(8, 18, 38, 0.00) 100%
+          );
+          pointer-events: none;
+        }
+
+        .internship-badge {
+          border-radius: 999px;
+          padding: 8px 14px;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+        }
+
+        .internship-title {
+          font-size: 2rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          color: #0f172a;
+          margin-bottom: 8px;
+        }
+
+        .internship-description {
+          color: #64748b;
+          line-height: 1.8;
+          margin-bottom: 24px;
+        }
+
+        .internship-soft-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 24px;
+          padding: 20px;
+          -webkit-transition: all 0.3s ease;
+          transition: all 0.3s ease;
+        }
+
+        .internship-soft-card:hover {
+          transform: translateY(-3px);
+          -webkit-transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+          -webkit-box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .internship-card-title {
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 14px;
+        }
+
+        .internship-select {
+          min-height: 56px;
+          border-radius: 16px;
+          border: 1px solid #dbe3f0;
+          background: #ffffff;
+          -webkit-transition: all 0.3s ease;
+          transition: all 0.3s ease;
+        }
+
+        .internship-select:focus {
+          border-color: #60a5fa;
+          box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+          -webkit-box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+        }
+
+        .internship-status-card {
+          border-radius: 22px;
+          padding: 18px 20px;
+          font-weight: 600;
+        }
+
+        .internship-status-success {
+          background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+          border: 1px solid #86efac;
+          color: #065f46;
+        }
+
+        .internship-status-warning {
+          background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+          border: 1px solid #fdba74;
+          color: #9a3412;
+        }
+
+        .internship-status-neutral {
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          border: 1px solid #cbd5e1;
+          color: #334155;
+        }
+
+        .internship-action-btn {
+          min-height: 58px;
+          border-radius: 18px;
+          font-weight: 800;
+          -webkit-transition: all 0.32s ease;
+          transition: all 0.32s ease;
+          box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+          -webkit-box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+        }
+
+        .internship-action-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
+        }
+
+        .internship-buy-btn {
+          border: none;
+          color: #fff;
+          background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+          box-shadow: 0 18px 35px rgba(16,185,129,0.20);
+          -webkit-box-shadow: 0 18px 35px rgba(16,185,129,0.20);
+        }
+
+        .internship-buy-btn:hover {
+          color: #fff;
+        }
+
+        .internship-certificate-btn {
+          border: none;
+          color: #fff;
+          background: linear-gradient(135deg, #0b1736 0%, #142850 40%, #1d4ed8 100%);
+          box-shadow:
+            0 18px 35px rgba(29, 78, 216, 0.20),
+            0 8px 20px rgba(11, 23, 54, 0.16);
+          -webkit-box-shadow:
+            0 18px 35px rgba(29, 78, 216, 0.20),
+            0 8px 20px rgba(11, 23, 54, 0.16);
+        }
+
+        .internship-certificate-btn:hover {
+          color: #fff;
+        }
+
+        .internship-list {
+          padding-left: 18px;
+          margin-bottom: 0;
+          color: #475569;
+          line-height: 1.9;
+        }
+
+        .internship-note {
+          color: #64748b;
+          font-size: 0.95rem;
+          line-height: 1.8;
+          margin-bottom: 0;
+        }
+
+        .internship-info-label {
+          color: #64748b;
+          font-size: 0.88rem;
+          margin-bottom: 4px;
+        }
+
+        .internship-info-value {
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 0;
+        }
+
+        @keyframes internshipDetailsFloat {
+          0%, 100% {
+            transform: translateY(0px) translateX(0px);
+          }
+          50% {
+            transform: translateY(-18px) translateX(10px);
+          }
+        }
+
+        @-webkit-keyframes internshipDetailsFloat {
+          0%, 100% {
+            -webkit-transform: translateY(0px) translateX(0px);
+          }
+          50% {
+            -webkit-transform: translateY(-18px) translateX(10px);
+          }
+        }
+
+        @media (max-width: 991px) {
+          .internship-title {
+            font-size: 1.75rem;
+          }
+
+          .internship-image-wrap {
+            min-height: 320px;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .internship-details-page {
+            padding: 22px 0;
+          }
+
+          .internship-title {
+            font-size: 1.55rem;
+          }
+
+          .internship-image-wrap {
+            min-height: 260px;
+          }
+        }
+      `}</style>
+
+      <div className="internship-details-page py-4 py-lg-5">
+        <div className="internship-details-orb internship-details-orb-1"></div>
+        <div className="internship-details-orb internship-details-orb-2"></div>
+
+        <div className="container internship-details-shell">
+          {toast.show && (
+            <div
+              style={{
+                position: "fixed",
+                top: "96px",
+                zIndex: 99999,
+                right: "24px",
+                zIndex: 9999,
+                minWidth: "280px",
+                maxWidth: "380px",
+              }}
+            >
+              <div
+                className="shadow-lg rounded-4 px-4 py-3"
+                style={{
+                  background:
+                    toast.type === "success"
+                      ? "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)"
+                      : "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)",
+                  border:
+                    toast.type === "success"
+                      ? "1px solid #86efac"
+                      : "1px solid #fca5a5",
+                }}
+              >
+                <div
+                  className={`fw-bold mb-1 ${toast.type === "success" ? "text-success" : "text-danger"
+                    }`}
                 >
-                  {internship.durations.map((item, index) => (
-                    <option key={index} value={item.label}>
-                      {item.label} - INR {item.price}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="border rounded-4 p-3 mb-4">
-                <h4 className="mb-2">Selected Plan</h4>
-                <p className="mb-1">
-                  <strong>Duration:</strong>{" "}
-                  {selectedPlan ? selectedPlan.label : "N/A"}
-                </p>
-                <p className="mb-0">
-                  <strong>Price:</strong> INR {selectedPlan ? selectedPlan.price : 0}
-                </p>
-              </div>
-
-              {checkingCertificate ? (
-                <div className="alert alert-secondary">
-                  Checking certificate status...
+                  {toast.type === "success" ? "Success" : "Error"}
                 </div>
-              ) : certificateEligible ? (
-                <div className="alert alert-success">
-                  You are eligible to claim your certificate for this internship.
-                </div>
-              ) : (
-                <div className="alert alert-warning">
-                  Complete the required course progress and mini test to become certificate-eligible.
-                </div>
-              )}
+                <div className="text-dark small">{toast.message}</div>
+              </div>
+            </div>
+          )}
 
-              <div className="d-grid gap-3">
-                <button
-                  className="btn btn-success btn-lg"
-                  onClick={handleBuyNow}
-                  disabled={loading}
-                >
-                  {loading ? "Processing..." : "Buy Now"}
-                </button>
+          <button
+            className="btn btn-outline-dark internship-back-btn mb-4"
+            onClick={() => navigate(-1)}
+          >
+            ← Back
+          </button>
 
-                {!checkingCertificate && certificateEligible && (
-                  <button
-                    className="btn btn-dark btn-lg"
-                    onClick={handleGenerateCertificate}
-                    disabled={loading}
-                  >
-                    {loading
-                      ? "Processing..."
-                      : certificateExists
-                      ? "Download Certificate"
-                      : "Generate Certificate"}
-                  </button>
-                )}
+          <div className="card internship-main-card border-0 rounded-5 overflow-hidden">
+            <div className="row g-0">
+              <div className="col-lg-6">
+                <div className="internship-image-wrap">
+                  <img
+                    src={
+                      internship.thumbnail ||
+                      "https://via.placeholder.com/600x350"
+                    }
+                    alt={internship.title}
+                    className="internship-main-image"
+                  />
+                  <div className="internship-image-overlay"></div>
+                </div>
               </div>
 
-              <div className="mt-4 border rounded-4 p-3 bg-light">
-                <h5 className="mb-3">What you get</h5>
-                <ul className="mb-0 ps-3">
-                  <li>Internship access after successful payment</li>
-                  <li>Offer letter download</li>
-                  <li>Course modules and progress tracking</li>
-                  <li>Mini test and retake support</li>
-                  <li>Certificate generation after eligibility</li>
-                  <li>Public certificate verification via ID / QR</li>
-                </ul>
-              </div>
+              <div className="col-lg-6">
+                <div className="p-4 p-lg-5">
+                  <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                    <div>
+                      <h2 className="internship-title">{internship.title}</h2>
+                      <span className="badge bg-secondary internship-badge">
+                        {internship.branch}
+                      </span>
+                    </div>
 
-              <p className="text-muted small mt-3 mb-0">
-                After successful payment, this internship will appear in My Purchases,
-                where you can access the course, offer letter, mini test, and certificate flow.
-              </p>
+                    <span className="badge bg-dark internship-badge">
+                      {internship.category}
+                    </span>
+                  </div>
+
+                  <p className="internship-description">
+                    {internship.description}
+                  </p>
+
+                  <div className="internship-soft-card mb-4">
+                    <h5 className="internship-card-title">Select Duration</h5>
+                    <select
+                      className="form-select internship-select"
+                      value={selectedDuration}
+                      onChange={(e) => setSelectedDuration(e.target.value)}
+                    >
+                      {internship.durations.map((item, index) => (
+                        <option key={index} value={item.label}>
+                          {item.label} - INR {item.price}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="internship-soft-card mb-4">
+                    <h5 className="internship-card-title">Selected Plan</h5>
+                    <div className="row g-3">
+                      <div className="col-sm-6">
+                        <div className="internship-soft-card h-100">
+                          <div className="internship-info-label">Duration</div>
+                          <p className="internship-info-value mb-0">
+                            {selectedPlan ? selectedPlan.label : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="col-sm-6">
+                        <div className="internship-soft-card h-100">
+                          <div className="internship-info-label">Price</div>
+                          <p className="internship-info-value mb-0">
+                            INR {selectedPlan ? selectedPlan.price : 0}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {checkingCertificate ? (
+                    <div className="internship-status-card internship-status-neutral mb-4">
+                      Checking certificate status...
+                    </div>
+                  ) : certificateEligible ? (
+                    <div className="internship-status-card internship-status-success mb-4">
+                      You are eligible to claim your certificate for this
+                      internship.
+                    </div>
+                  ) : (
+                    <div className="internship-status-card internship-status-warning mb-4">
+                      Complete the required course progress and mini test to
+                      become certificate-eligible.
+                    </div>
+                  )}
+
+                  <div className="d-grid gap-3 mb-4">
+                    <button
+                      className="btn internship-action-btn internship-buy-btn"
+                      onClick={handleBuyNow}
+                      disabled={loading}
+                    >
+                      {loading ? "Processing..." : "Buy Now"}
+                    </button>
+
+                    {!checkingCertificate && certificateEligible && (
+                      <button
+                        className="btn internship-action-btn internship-certificate-btn"
+                        onClick={handleGenerateCertificate}
+                        disabled={loading}
+                      >
+                        {loading
+                          ? "Processing..."
+                          : certificateExists
+                            ? "Download Certificate"
+                            : "Generate Certificate"}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="internship-soft-card mb-3">
+                    <h5 className="internship-card-title">What you get</h5>
+                    <ul className="internship-list">
+                      <li>Internship access after successful payment</li>
+                      <li>Offer letter download</li>
+                      <li>Course modules and progress tracking</li>
+                      <li>Mini test and retake support</li>
+                      <li>Certificate generation after eligibility</li>
+                      <li>Public certificate verification via ID / QR</li>
+                    </ul>
+                  </div>
+
+                  <p className="internship-note">
+                    After successful payment, this internship will appear in My
+                    Purchases, where you can access the course, offer letter,
+                    mini test, and certificate flow.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
