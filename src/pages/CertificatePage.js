@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { useNavigate, useParams } from "react-router-dom";
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
 function CertificatePage() {
   const { internshipId } = useParams();
@@ -14,16 +16,17 @@ function CertificatePage() {
 
   const fetchEligibility = async () => {
     try {
-      const { data } = await API.get(
-        `/certificates/eligibility/${internshipId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const { data } = await API.get(`/certificates/eligibility/${internshipId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       setEligibility(data);
+
+      if (data?.certificate) {
+        setCertificate(data.certificate);
+      }
     } catch (error) {
       console.error("Eligibility error:", error);
       alert(error.response?.data?.message || "Failed to check eligibility");
@@ -53,6 +56,7 @@ function CertificatePage() {
       );
 
       setCertificate(data.certificate);
+      await fetchEligibility();
       alert("Certificate generated successfully!");
     } catch (error) {
       console.error(error);
@@ -63,45 +67,45 @@ function CertificatePage() {
   };
 
   const handleDownload = async () => {
-  try {
-    const response = await fetch(
-      `http://localhost:5000/api/certificates/${certificate.certificateId}/download`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/certificates/${certificate.certificateId}/download`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to download certificate");
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Failed to download certificate");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const safeName = (certificate?.candidateName || "candidate")
+        .replace(/[^a-z0-9]/gi, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
+
+      const safeCertificateId = (certificate?.certificateId || "certificate")
+        .replace(/[^a-z0-9-]/gi, "_");
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}_${safeCertificateId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert("Certificate download failed");
     }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    const safeName = (certificate?.candidateName || "candidate")
-      .replace(/[^a-z0-9]/gi, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_|_$/g, "");
-
-    const safeCertificateId = (certificate?.certificateId || "certificate")
-      .replace(/[^a-z0-9-]/gi, "_");
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${safeName}_${safeCertificateId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error(error);
-    alert("Certificate download failed");
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -251,9 +255,8 @@ function CertificatePage() {
                           Mini Test Status
                         </div>
                         <div
-                          className={`fw-bold fs-3 ${
-                            testPassed ? "text-success" : "text-danger"
-                          }`}
+                          className={`fw-bold fs-3 ${testPassed ? "text-success" : "text-danger"
+                            }`}
                         >
                           {testPassed ? "Passed" : "Not Passed"}
                         </div>
@@ -275,9 +278,8 @@ function CertificatePage() {
                           Final Eligibility
                         </div>
                         <div
-                          className={`fw-bold fs-3 ${
-                            finalEligible ? "text-success" : "text-warning"
-                          }`}
+                          className={`fw-bold fs-3 ${finalEligible ? "text-success" : "text-warning"
+                            }`}
                         >
                           {finalEligible ? "Approved" : "Pending"}
                         </div>
@@ -334,9 +336,13 @@ function CertificatePage() {
                   >
                     <div className="row g-4 align-items-center">
                       <div className="col-lg-7">
-                        <h5 className="fw-bold mb-3 text-dark">
-                          Certificate Generated Successfully
+
+                        <h5 className="fw-bold mb-2 text-dark">
+                          Certificate Ready
                         </h5>
+                        <p className="text-secondary mb-3">
+                          Your certificate has already been generated. You can download or verify it below.
+                        </p>
 
                         <div className="mb-2">
                           <div className="text-secondary small mb-1">
@@ -435,9 +441,8 @@ function CertificatePage() {
                           Mini Test
                         </div>
                         <div
-                          className={`fw-bold fs-3 ${
-                            testPassed ? "text-success" : "text-danger"
-                          }`}
+                          className={`fw-bold fs-3 ${testPassed ? "text-success" : "text-danger"
+                            }`}
                         >
                           {testPassed ? "Passed" : "Pending"}
                         </div>
