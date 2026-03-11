@@ -422,7 +422,7 @@ function Navbar() {
                   }`}
                   to="/internships"
                 >
-                  Internships
+                  Programs
                 </Link>
               </li>
 

@@ -506,7 +506,7 @@ function Login() {
 
                     <h1 className="login-brand-title">Welcome Back</h1>
                     <p className="login-brand-subtitle">
-                      Access your internship dashboard, progress tracking,
+                      Access your learning dashboard, progress tracking,
                       mini tests, Learning Access Letter, certificates, and verification
                       tools in one premium workspace.
                     </p>

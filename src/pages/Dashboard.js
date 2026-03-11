@@ -475,7 +475,7 @@ function Dashboard() {
                       to="/internships"
                       className="btn dashboard-action-btn dashboard-primary-btn"
                     >
-                      Explore Internships
+                      Explore Programs
                     </Link>
 
                     <Link
@@ -518,9 +518,9 @@ function Dashboard() {
             <div className="col-md-4">
               <div className="dashboard-feature-card">
                 <div className="dashboard-feature-icon">🚀</div>
-                <h4 className="dashboard-feature-title">Internships</h4>
+                <h4 className="dashboard-feature-title">Programs</h4>
                 <p className="dashboard-feature-text">
-                  Browse modern domain-based internship programs with flexible
+                  Browse modern domain-based training programs with flexible
                   durations, guided learning paths, and a clean premium
                   experience.
                 </p>

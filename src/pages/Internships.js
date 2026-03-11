@@ -592,7 +592,7 @@ function Internships() {
 
               <div className="row g-3">
                 <div className="col-md-12">
-                  <label className="form-label fw-bold">Search Internships</label>
+                  <label className="form-label fw-bold">Search Programs</label>
                   <input
                     type="text"
                     className="form-control internships-filter-input"
