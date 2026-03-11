@@ -118,10 +118,35 @@ function AdminInternships() {
       setLoading(true);
 
       const payload = {
-        ...formData,
-        modules: formData.modules.filter((m) => m.title.trim()),
-        quiz: formData.quiz.filter((q) => q.question.trim()),
-      };
+  ...formData,
+  durations: formData.durations
+    .filter((d) => d.label.trim() && Number(d.price) >= 0)
+    .map((d) => ({
+      label: d.label.trim(),
+      price: Number(d.price),
+    })),
+
+  modules: formData.modules
+    .filter((m) => m.title.trim())
+    .map((m) => ({
+      title: m.title.trim(),
+      description: m.description.trim(),
+    })),
+
+  quiz: formData.quiz
+    .filter(
+      (q) =>
+        q.question.trim() &&
+        Array.isArray(q.options) &&
+        q.options.length === 4 &&
+        q.options.every((opt) => opt.trim() !== "")
+    )
+    .map((q) => ({
+      question: q.question.trim(),
+      options: q.options.map((opt) => opt.trim()),
+      correctAnswer: Number(q.correctAnswer),
+    })),
+};
 
       if (editingId) {
         await API.put(`/internships/${editingId}`, payload, {

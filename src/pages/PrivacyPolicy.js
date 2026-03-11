@@ -158,7 +158,7 @@ function PrivacyPolicy() {
             <div className="legal-section">
               <h4>Contact</h4>
               <p>
-                For privacy-related concerns, please contact us at support@internova.com.
+                For privacy-related concerns, please contact us at internova.support@gmail.com.
               </p>
             </div>
           </div>

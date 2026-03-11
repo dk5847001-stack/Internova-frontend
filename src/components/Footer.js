@@ -389,7 +389,7 @@ function Footer() {
                 <div className="footer-highlight-box">
                   <h6 className="footer-highlight-title">Support</h6>
                   <p className="footer-highlight-text">
-                    support@internova.com
+                    internova.support@gmail.com
                   </p>
                 </div>
 

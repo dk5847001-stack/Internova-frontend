@@ -51,6 +51,7 @@ function Navbar() {
           text-decoration: none;
           -webkit-transition: all 0.3s ease;
           transition: all 0.3s ease;
+          min-width: 0;
         }
 
         .internova-brand:hover {
@@ -121,6 +122,7 @@ function Navbar() {
           border-radius: 14px;
           -webkit-transition: all 0.28s ease;
           transition: all 0.28s ease;
+          white-space: nowrap;
         }
 
         .internova-link:hover {
@@ -137,6 +139,14 @@ function Navbar() {
           -webkit-box-shadow: inset 0 0 0 1px #dbeafe;
         }
 
+        .internova-right-zone {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+          flex-wrap: nowrap;
+        }
+
         .internova-search-wrap {
           display: flex;
           align-items: center;
@@ -145,7 +155,10 @@ function Navbar() {
           border-radius: 18px;
           padding: 4px;
           min-height: 54px;
-          min-width: 290px;
+          width: 320px;
+          max-width: 320px;
+          min-width: 0;
+          flex-shrink: 1;
           -webkit-transition: all 0.3s ease;
           transition: all 0.3s ease;
         }
@@ -189,6 +202,8 @@ function Navbar() {
             0 6px 14px rgba(11, 23, 54, 0.14);
           -webkit-transition: all 0.28s ease;
           transition: all 0.28s ease;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
         .internova-search-btn:hover {
@@ -196,16 +211,37 @@ function Navbar() {
           -webkit-transform: translateY(-1px);
         }
 
+        .internova-user-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+          flex-shrink: 1;
+        }
+
         .internova-user-pill {
           display: inline-flex;
           align-items: center;
           min-height: 44px;
+          max-width: 210px;
+          min-width: 0;
           padding: 0 16px;
           border-radius: 999px;
           background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
           color: #0f172a;
           font-weight: 800;
           border: 1px solid #dbeafe;
+          overflow: hidden;
+          flex-shrink: 1;
+          -webkit-transition: all 0.3s ease;
+          transition: all 0.3s ease;
+        }
+
+        .internova-user-name {
+          display: block;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
           white-space: nowrap;
         }
 
@@ -218,6 +254,7 @@ function Navbar() {
           font-weight: 800;
           -webkit-transition: all 0.3s ease;
           transition: all 0.3s ease;
+          white-space: nowrap;
         }
 
         .internova-logout-btn,
@@ -248,14 +285,36 @@ function Navbar() {
           -webkit-transform: translateY(-2px);
         }
 
+        @media (max-width: 1399px) {
+          .internova-search-wrap {
+            width: 280px;
+            max-width: 280px;
+          }
+
+          .internova-user-pill {
+            max-width: 180px;
+          }
+        }
+
+        @media (max-width: 1199px) {
+          .internova-search-wrap {
+            width: 240px;
+            max-width: 240px;
+          }
+
+          .internova-user-pill {
+            max-width: 150px;
+          }
+
+          .internova-link {
+            padding: 10px 12px !important;
+          }
+        }
+
         @media (max-width: 991px) {
           .internova-navbar {
             padding-top: 10px;
             padding-bottom: 10px;
-          }
-
-          .internova-search-wrap {
-            min-width: 100%;
           }
 
           .navbar-collapse {
@@ -266,6 +325,27 @@ function Navbar() {
 
           .internova-link {
             width: 100%;
+          }
+
+          .internova-right-zone {
+            flex-direction: column;
+            align-items: stretch;
+            width: 100%;
+          }
+
+          .internova-search-wrap {
+            width: 100%;
+            max-width: 100%;
+          }
+
+          .internova-user-actions {
+            width: 100%;
+            justify-content: space-between;
+            flex-wrap: wrap;
+          }
+
+          .internova-user-pill {
+            max-width: 100%;
           }
         }
 
@@ -283,6 +363,17 @@ function Navbar() {
             height: 44px;
             border-radius: 14px;
           }
+
+          .internova-user-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .internova-user-pill,
+          .internova-logout-btn {
+            width: 100%;
+            justify-content: center;
+          }
         }
       `}</style>
 
@@ -295,7 +386,7 @@ function Navbar() {
             <div className="internova-logo-circle">I</div>
             <div>
               <span className="brand-main">Internova</span>
-              <span className="brand-sub d-block">Internship Platform</span>
+              <span className="brand-sub d-block">Learning Platform</span>
             </div>
           </Link>
 
@@ -358,7 +449,7 @@ function Navbar() {
               </li>
             </ul>
 
-            <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3">
+            <div className="internova-right-zone">
               <form className="internova-search-wrap" onSubmit={handleSearch}>
                 <input
                   type="text"
@@ -373,10 +464,16 @@ function Navbar() {
               </form>
 
               {token ? (
-                <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className="internova-user-pill">
-                    {user?.name || "User"}
+                <div className="internova-user-actions">
+                  <span
+                    className="internova-user-pill"
+                    title={user?.name || "User"}
+                  >
+                    <span className="internova-user-name">
+                      {user?.name || "User"}
+                    </span>
                   </span>
+
                   <button
                     className="btn internova-logout-btn"
                     onClick={handleLogout}
