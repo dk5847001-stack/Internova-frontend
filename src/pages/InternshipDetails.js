@@ -680,7 +680,7 @@ function InternshipDetails() {
                       onClick={handleBuyNow}
                       disabled={loading}
                     >
-                      {loading ? "Processing..." : "Buy Now"}
+                      {loading ? "Processing..." : "Enroll Now"}
                     </button>
 
                     {!checkingCertificate && certificateEligible && (
@@ -701,8 +701,8 @@ function InternshipDetails() {
                   <div className="internship-soft-card mb-3">
                     <h5 className="internship-card-title">What you get</h5>
                     <ul className="internship-list">
-                      <li>Internship access after successful payment</li>
-                      <li>Offer letter download</li>
+                      <li>Program access after successful enrollment</li>
+                      <li>Learning Access Letter download</li>
                       <li>Course modules and progress tracking</li>
                       <li>Mini test and retake support</li>
                       <li>Certificate generation after eligibility</li>
@@ -711,8 +711,8 @@ function InternshipDetails() {
                   </div>
 
                   <p className="internship-note">
-                    After successful payment, this internship will appear in My
-                    Purchases, where you can access the course, offer letter,
+                    After successful payment, this training program will appear in My
+                    Enrollments, where you can access the course, learning access letter,
                     mini test, and certificate flow.
                   </p>
                 </div>

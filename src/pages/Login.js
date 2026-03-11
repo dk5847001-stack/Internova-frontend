@@ -507,7 +507,7 @@ function Login() {
                     <h1 className="login-brand-title">Welcome Back</h1>
                     <p className="login-brand-subtitle">
                       Access your internship dashboard, progress tracking,
-                      mini tests, offer letters, certificates, and verification
+                      mini tests, Learning Access Letter, certificates, and verification
                       tools in one premium workspace.
                     </p>
 
@@ -518,7 +518,7 @@ function Login() {
                       </div>
                       <div className="login-feature-item">
                         <span className="login-feature-dot"></span>
-                        Premium offer letter and certificate downloads
+                        Premium Learning Access Letter and certificate downloads
                       </div>
                       <div className="login-feature-item">
                         <span className="login-feature-dot"></span>

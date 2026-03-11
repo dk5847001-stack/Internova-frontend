@@ -381,7 +381,7 @@ function Dashboard() {
                     Welcome to Internova, {user?.name || "User"} 👋
                   </h1>
                   <p className="dashboard-hero-subtitle">
-                    Track your internships, manage course access, download offer
+                    track your learning progress, manage course access, download offer
                     letters, complete mini tests, and generate verified
                     certificates from one elegant dashboard.
                   </p>
@@ -482,7 +482,7 @@ function Dashboard() {
                       to="/my-purchases"
                       className="btn btn-success dashboard-action-btn"
                     >
-                      My Purchases
+                      My Enrollments
                     </Link>
 
                     <Link

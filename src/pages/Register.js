@@ -496,7 +496,7 @@ function Register() {
 
                     <h1 className="register-brand-title">Create Your Account</h1>
                     <p className="register-brand-subtitle">
-                      Register to explore internship programs, complete learning
+                      Register to explore training programs, complete learning
                       modules, attempt mini tests, and earn premium verified
                       certificates with a seamless professional experience.
                     </p>
@@ -504,11 +504,11 @@ function Register() {
                     <div className="register-feature-list">
                       <div className="register-feature-item">
                         <span className="register-feature-dot"></span>
-                        Access internship courses and guided learning modules
+                        Access training courses and guided learning modules
                       </div>
                       <div className="register-feature-item">
                         <span className="register-feature-dot"></span>
-                        Download branded offer letters and certificates
+                        Download branded Learning Access Letter and certificates
                       </div>
                       <div className="register-feature-item">
                         <span className="register-feature-dot"></span>

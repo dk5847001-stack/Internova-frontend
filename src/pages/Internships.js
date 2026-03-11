@@ -512,14 +512,12 @@ function Internships() {
             <div className="card-body p-4 p-md-5">
               <div className="row g-4 align-items-center">
                 <div className="col-lg-8">
-                  <div className="internships-chip">Internova Internship Explorer</div>
+                  <div className="internships-chip">Internova Training Explorer</div>
                   <h1 className="internships-hero-title">
-                    Explore Internship Programs
+                    Explore Training Programs
                   </h1>
                   <p className="internships-hero-text">
-                    Discover premium industry-focused internship programs across
-                    multiple branches, categories, and durations — all designed
-                    to support guided learning and verified certification.
+                    Discover structured industry-focused training programs with guided learning, assessments, and certificate support.
                   </p>
                 </div>
 

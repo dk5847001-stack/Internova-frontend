@@ -640,10 +640,10 @@ function AdminInternships() {
           <div className="card admin-glass-card border-0 rounded-5 overflow-hidden mb-4">
             <div className="card-body p-4 p-md-5">
               <h3 className="admin-section-title">
-                {editingId ? "Edit Internship Program" : "Create Internship Program"}
+                {editingId ? "Edit Program" : "Create Program"}
               </h3>
               <p className="admin-section-subtitle">
-                Fill in the details below to build a complete internship
+                Fill in the details below to build a complete training
                 experience with durations, modules, and quiz questions.
               </p>
 

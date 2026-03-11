@@ -198,7 +198,7 @@ function MyPurchases() {
                 </div>
 
                 <h1 className="fw-bold mb-3" style={{ fontSize: "2rem" }}>
-                  My Purchased Internships
+                  My Enrolled Programs
                 </h1>
 
                 <p className="mb-0 text-light" style={{ maxWidth: "720px" }}>

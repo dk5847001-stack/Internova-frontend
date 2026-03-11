@@ -433,7 +433,7 @@ function Navbar() {
                   }`}
                   to="/my-purchases"
                 >
-                  My Purchases
+                  My Enrollments
                 </Link>
               </li>
 
@@ -454,7 +454,7 @@ function Navbar() {
                 <input
                   type="text"
                   className="internova-search"
-                  placeholder="Search internships..."
+                  placeholder="Search programs..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
