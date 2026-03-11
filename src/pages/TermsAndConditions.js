@@ -162,7 +162,7 @@ function TermsAndConditions() {
             <div className="legal-section">
               <h4>Contact</h4>
               <p>
-                For questions regarding these terms, please contact support@internova.com.
+                For questions regarding these terms, please contact internova.support@gmail.com.
               </p>
             </div>
           </div>
