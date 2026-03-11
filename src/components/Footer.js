@@ -331,14 +331,17 @@ function Footer() {
                   <div className="footer-logo">I</div>
                   <div>
                     <h4 className="footer-brand-title mb-0">Internova</h4>
-                    <small className="footer-brand-sub">Internship Platform</small>
+                    <small className="footer-brand-sub">
+                      Learning & Certification Platform
+                    </small>
                   </div>
                 </div>
 
                 <p className="footer-text">
-                  Internova helps learners explore internships, track progress,
-                  complete assessments, generate certificates, and verify
-                  credentials through a premium digital learning experience.
+                  Internova helps learners access structured training programs,
+                  track progress, complete assessments, generate certificates,
+                  and verify credentials through a premium digital learning
+                  experience.
                 </p>
 
                 <div className="footer-mini-badges">
@@ -349,19 +352,24 @@ function Footer() {
               </div>
             </div>
 
-            <div className="col-lg-2 col-md-4">
+            <div className="col-lg-3 col-md-4">
               <div className="footer-top-card">
                 <h5 className="footer-heading">Quick Links</h5>
                 <ul className="footer-links">
                   <li><Link to="/dashboard">Dashboard</Link></li>
-                  <li><Link to="/internships">Internships</Link></li>
+                  <li><Link to="/internships">Programs</Link></li>
                   <li><Link to="/my-purchases">My Purchases</Link></li>
                   <li><Link to="/verify">Verify Certificate</Link></li>
+                  <li><Link to="/about">About Us</Link></li>
+                  <li><Link to="/contact">Contact Us</Link></li>
+                  <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+                  <li><Link to="/terms-and-conditions">Terms & Conditions</Link></li>
+                  <li><Link to="/refund-policy">Refund Policy</Link></li>
                 </ul>
               </div>
             </div>
 
-            <div className="col-lg-3 col-md-4">
+            <div className="col-lg-2 col-md-4">
               <div className="footer-top-card">
                 <h5 className="footer-heading">Programs</h5>
                 <ul className="footer-links">
@@ -388,8 +396,8 @@ function Footer() {
                 <div className="footer-highlight-box">
                   <h6 className="footer-highlight-title">Message</h6>
                   <p className="footer-highlight-text">
-                    We help with learning access, certificate issues, and
-                    account-related questions.
+                    We help with learning access, certificate issues, payment
+                    queries, and account-related questions.
                   </p>
                 </div>
 
@@ -403,7 +411,6 @@ function Footer() {
             </div>
           </div>
 
-          {/* SUBSCRIBE + SUPPORT BAR */}
           <div className="footer-subscribe-box">
             <div className="row g-4 align-items-center">
               <div className="col-lg-7">
@@ -411,7 +418,7 @@ function Footer() {
                   Subscribe for Updates & Opportunities
                 </h4>
                 <p className="footer-subscribe-text">
-                  Get internship updates, new program announcements, platform
+                  Get training program updates, new announcements, platform
                   improvements, and premium learning insights delivered to your inbox.
                 </p>
 
@@ -435,15 +442,17 @@ function Footer() {
                 <div className="footer-highlight-box">
                   <h6 className="footer-highlight-title">Need Help Fast?</h6>
                   <p className="footer-highlight-text">
-                    Use the platform to explore internships, track modules,
-                    attempt tests, and verify official certificates.
+                    Use the platform to access training programs, track modules,
+                    attempt assessments, and verify official certificates.
                   </p>
                 </div>
 
                 <div className="footer-highlight-box mb-0">
-                  <h6 className="footer-highlight-title">Secure Learning Access</h6>
+                  <h6 className="footer-highlight-title">
+                    Secure Learning Access
+                  </h6>
                   <p className="footer-highlight-text">
-                    Premium internship dashboard, certificate generation,
+                    Premium learning dashboard, certificate generation,
                     verification support, and structured progress tracking.
                   </p>
                 </div>
@@ -461,7 +470,7 @@ function Footer() {
                 <a href="/" onClick={(e) => e.preventDefault()}>LinkedIn</a>
                 <a href="/" onClick={(e) => e.preventDefault()}>GitHub</a>
                 <a href="/" onClick={(e) => e.preventDefault()}>Instagram</a>
-                <a href="/" onClick={(e) => e.preventDefault()}>Support</a>
+                <Link to="/contact">Support</Link>
               </div>
             </div>
           </div>

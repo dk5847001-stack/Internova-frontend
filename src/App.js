@@ -23,6 +23,12 @@ import AdminRoute from "./components/AdminRoute";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import RefundPolicy from "./pages/RefundPolicy";
+
 function AppLayout() {
   const location = useLocation();
 
@@ -102,6 +108,12 @@ function AppLayout() {
             </AdminRoute>
           }
         />
+
+            <Route path="/about" element={<AboutUs />} />
+<Route path="/contact" element={<ContactUs />} />
+<Route path="/privacy-policy" element={<PrivacyPolicy />} />
+<Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+<Route path="/refund-policy" element={<RefundPolicy />} />
 
         <Route
           path="/quiz/:internshipId"
