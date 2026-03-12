@@ -198,7 +198,7 @@ function MyPurchases() {
                 </div>
 
                 <h1 className="fw-bold mb-3" style={{ fontSize: "2rem" }}>
-                  My Enrolled Programs
+                  My purchased Internship
                 </h1>
 
                 <p className="mb-0 text-light" style={{ maxWidth: "720px" }}>
@@ -274,7 +274,7 @@ function MyPurchases() {
                       <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                         <div>
                           <div className="small text-secondary mb-1">
-                            My Enrolled Programs
+                            My purchased Internship
                           </div>
                           <h4 className="fw-bold text-dark mb-0">
                             {internshipTitle}
