@@ -132,7 +132,7 @@ function MyPurchases() {
       >
         <div className="text-center">
           <div className="spinner-border text-dark mb-3" role="status"></div>
-          <div className="fw-semibold text-dark">Loading purchases...</div>
+          <div className="fw-semibold text-dark">Loading Enrolled...</div>
         </div>
       </div>
     );
@@ -202,7 +202,7 @@ function MyPurchases() {
                 </h1>
 
                 <p className="mb-0 text-light" style={{ maxWidth: "720px" }}>
-                  Access your purchased internships, open course content,
+                  Access your Enrolled Programs, open course content,
                   download access letters, attempt mini tests, and generate your
                   final certificates from one place.
                 </p>
@@ -217,10 +217,10 @@ function MyPurchases() {
                     backdropFilter: "blur(10px)",
                   }}
                 >
-                  <div className="small text-light mb-2">Total Purchases</div>
+                  <div className="small text-light mb-2">Total Enrollments</div>
                   <div className="fw-bold fs-2">{purchases.length}</div>
                   <div className="small text-light mt-2">
-                    Manage all paid internship enrollments and related
+                    Manage all paid programs enrollments and related
                     documents.
                   </div>
                 </div>
@@ -235,9 +235,9 @@ function MyPurchases() {
               <div className="mb-3" style={{ fontSize: "3rem" }}>
                 📘
               </div>
-              <h4 className="fw-bold text-dark mb-2">No Purchases Found</h4>
+              <h4 className="fw-bold text-dark mb-2">No Enrolled Found</h4>
               <p className="text-secondary mb-0">
-                You have not purchased any internship yet.
+                You have not Enrolled any program yet.
               </p>
             </div>
           </div>

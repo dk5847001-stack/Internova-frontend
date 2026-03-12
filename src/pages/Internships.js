@@ -33,8 +33,8 @@ function Internships() {
       const { data } = await API.get("/internships");
       setInternships(data.internships || []);
     } catch (error) {
-      console.error("Failed to fetch internships:", error);
-      showToast("error", "Failed to fetch internships");
+      console.error("Failed to fetch programs:", error);
+      showToast("error", "Failed to fetch programs");
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ function Internships() {
       >
         <div className="text-center">
           <div className="spinner-border text-dark mb-3" role="status"></div>
-          <div className="fw-semibold text-dark">Loading internships...</div>
+          <div className="fw-semibold text-dark">Loading programs...</div>
         </div>
       </div>
     );

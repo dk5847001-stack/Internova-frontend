@@ -47,8 +47,8 @@ function AdminInternships() {
       const { data } = await API.get("/internships");
       setInternships(data.internships || []);
     } catch (error) {
-      console.error("Failed to fetch internships:", error);
-      showToast("error", "Failed to fetch internships");
+      console.error("Failed to fetch programs:", error);
+      showToast("error", "Failed to fetch programs");
     }
   };
 
