@@ -358,7 +358,7 @@ function Footer() {
                 <ul className="footer-links">
                   <li><Link to="/dashboard">Dashboard</Link></li>
                   <li><Link to="/internships">Programs</Link></li>
-                  <li><Link to="/my-purchases">My Purchases</Link></li>
+                  <li><Link to="/my-purchases">My Enrollments</Link></li>
                   <li><Link to="/verify">Verify Certificate</Link></li>
                   <li><Link to="/about">About Us</Link></li>
                   <li><Link to="/contact">Contact Us</Link></li>

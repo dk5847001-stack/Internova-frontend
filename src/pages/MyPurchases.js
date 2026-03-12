@@ -203,7 +203,7 @@ function MyPurchases() {
 
                 <p className="mb-0 text-light" style={{ maxWidth: "720px" }}>
                   Access your purchased internships, open course content,
-                  download offer letters, attempt mini tests, and generate your
+                  download access letters, attempt mini tests, and generate your
                   final certificates from one place.
                 </p>
               </div>
@@ -274,7 +274,7 @@ function MyPurchases() {
                       <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                         <div>
                           <div className="small text-secondary mb-1">
-                            Internship Program
+                            My Enrolled Programs
                           </div>
                           <h4 className="fw-bold text-dark mb-0">
                             {internshipTitle}

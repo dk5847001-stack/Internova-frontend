@@ -427,7 +427,7 @@ function Dashboard() {
                   <h2 className="dashboard-profile-title">Your Profile Overview</h2>
                   <p className="dashboard-profile-subtitle">
                     Keep track of your registered account details and access your
-                    full internship workspace with a clean, premium experience.
+                    full programs workspace with a clean, premium experience.
                   </p>
 
                   <div className="dashboard-info-grid">
