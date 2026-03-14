@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -12,10 +12,12 @@ function InternshipDetails() {
   const [internship, setInternship] = useState(null);
   const [selectedDuration, setSelectedDuration] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [certificateEligible, setCertificateEligible] = useState(false);
   const [certificateExists, setCertificateExists] = useState(false);
   const [checkingCertificate, setCheckingCertificate] = useState(true);
+  const [eligibilityMessage, setEligibilityMessage] = useState("");
 
   const [toast, setToast] = useState({
     show: false,
@@ -34,47 +36,105 @@ function InternshipDetails() {
     }, 3000);
   };
 
+  const normalizedDurations = useMemo(() => {
+    if (!internship) return [];
+
+    if (Array.isArray(internship.durations) && internship.durations.length > 0) {
+      return internship.durations;
+    }
+
+    return [
+      {
+        label:
+          internship.duration ||
+          `${internship.durationDays || 30} Days`,
+        price: internship.price || 0,
+      },
+    ];
+  }, [internship]);
+
+  const selectedPlan = useMemo(() => {
+    if (!normalizedDurations.length) return null;
+
+    return (
+      normalizedDurations.find((item) => item.label === selectedDuration) ||
+      normalizedDurations[0]
+    );
+  }, [normalizedDurations, selectedDuration]);
+
   const fetchInternship = async () => {
     try {
-      const { data } = await API.get(`/internships/${id}`);
-      setInternship(data.internship);
+      setPageLoading(true);
 
-      if (data.internship?.durations?.length > 0) {
-        setSelectedDuration(data.internship.durations[0].label);
+      const { data } = await API.get(`/internships/${id}`);
+      const internshipData = data?.internship || null;
+
+      setInternship(internshipData);
+
+      if (
+        internshipData?.durations?.length > 0 &&
+        !selectedDuration
+      ) {
+        setSelectedDuration(internshipData.durations[0].label);
+      } else if (!selectedDuration) {
+        setSelectedDuration(
+          internshipData?.duration ||
+            `${internshipData?.durationDays || 30} Days`
+        );
       }
     } catch (error) {
       console.error("Failed to fetch internship details:", error);
       showToast("error", "Failed to load internship details");
+    } finally {
+      setPageLoading(false);
     }
   };
 
   const checkCertificateEligibility = async () => {
     try {
       setCheckingCertificate(true);
+      setEligibilityMessage("");
 
       if (!token) {
         setCertificateEligible(false);
         setCertificateExists(false);
+        setEligibilityMessage("Login required to check certificate eligibility.");
         return;
       }
 
-      const { data } = await API.get(`/certificates/eligibility/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } = await API.get(`/certificates/eligibility/${id}`);
 
-      if (data.success) {
+      if (data?.success) {
         setCertificateEligible(!!data.eligible);
         setCertificateExists(!!data.certificate || !!data.certificateExists);
+        setEligibilityMessage(
+          data.eligible
+            ? "You are eligible to claim your certificate."
+            : "Complete the required course progress and mini test to become certificate-eligible."
+        );
       } else {
         setCertificateEligible(false);
         setCertificateExists(false);
+        setEligibilityMessage("Unable to check certificate eligibility right now.");
       }
     } catch (error) {
-      console.error("Eligibility check failed:", error);
-      setCertificateEligible(false);
-      setCertificateExists(false);
+      const status = error?.response?.status;
+      const message =
+        error?.response?.data?.message ||
+        "Unable to check certificate eligibility";
+
+      if (status === 403) {
+        setCertificateEligible(false);
+        setCertificateExists(false);
+        setEligibilityMessage(
+          "Purchase required to unlock certificate eligibility."
+        );
+      } else {
+        console.error("Eligibility check failed:", error);
+        setCertificateEligible(false);
+        setCertificateExists(false);
+        setEligibilityMessage(message);
+      }
     } finally {
       setCheckingCertificate(false);
     }
@@ -94,20 +154,17 @@ function InternshipDetails() {
         return;
       }
 
+      if (!selectedPlan?.label) {
+        showToast("error", "Please select a valid duration plan");
+        return;
+      }
+
       setLoading(true);
 
-      const { data } = await API.post(
-        "/payments/create-order",
-        {
-          internshipId: id,
-          durationLabel: selectedDuration,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const { data } = await API.post("/payments/create-order", {
+        internshipId: id,
+        durationLabel: selectedPlan.label,
+      });
 
       const options = {
         key: data.key,
@@ -118,19 +175,11 @@ function InternshipDetails() {
         order_id: data.order.id,
         handler: async function (response) {
           try {
-            const verifyRes = await API.post(
-              "/payments/verify",
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            const verifyRes = await API.post("/payments/verify", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
             if (verifyRes.data.success) {
               showToast("success", "Payment successful!");
@@ -179,15 +228,7 @@ function InternshipDetails() {
 
       setLoading(true);
 
-      const { data } = await API.post(
-        `/certificates/generate/${id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const { data } = await API.post(`/certificates/generate/${id}`, {});
 
       if (data.success) {
         showToast(
@@ -217,7 +258,7 @@ function InternshipDetails() {
     }
   };
 
-  if (!internship) {
+  if (pageLoading) {
     return (
       <div
         className="min-vh-100 d-flex align-items-center justify-content-center"
@@ -234,9 +275,22 @@ function InternshipDetails() {
     );
   }
 
-  const selectedPlan = internship.durations.find(
-    (item) => item.label === selectedDuration
-  );
+  if (!internship) {
+    return (
+      <div
+        className="min-vh-100 d-flex align-items-center justify-content-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%)",
+        }}
+      >
+        <div className="text-center">
+          <div className="fw-bold text-dark mb-2">Internship not found</div>
+          <div className="text-muted">Please go back and try again.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -547,9 +601,8 @@ function InternshipDetails() {
               style={{
                 position: "fixed",
                 top: "96px",
-                zIndex: 99999,
                 right: "24px",
-                zIndex: 9999,
+                zIndex: 99999,
                 minWidth: "280px",
                 maxWidth: "380px",
               }}
@@ -568,8 +621,9 @@ function InternshipDetails() {
                 }}
               >
                 <div
-                  className={`fw-bold mb-1 ${toast.type === "success" ? "text-success" : "text-danger"
-                    }`}
+                  className={`fw-bold mb-1 ${
+                    toast.type === "success" ? "text-success" : "text-danger"
+                  }`}
                 >
                   {toast.type === "success" ? "Success" : "Error"}
                 </div>
@@ -624,10 +678,10 @@ function InternshipDetails() {
                     <h5 className="internship-card-title">Select Duration</h5>
                     <select
                       className="form-select internship-select"
-                      value={selectedDuration}
+                      value={selectedPlan?.label || selectedDuration}
                       onChange={(e) => setSelectedDuration(e.target.value)}
                     >
-                      {internship.durations.map((item, index) => (
+                      {normalizedDurations.map((item, index) => (
                         <option key={index} value={item.label}>
                           {item.label} - INR {item.price}
                         </option>
@@ -664,13 +718,13 @@ function InternshipDetails() {
                     </div>
                   ) : certificateEligible ? (
                     <div className="internship-status-card internship-status-success mb-4">
-                      You are eligible to claim your certificate for this
-                      internship.
+                      {eligibilityMessage ||
+                        "You are eligible to claim your certificate for this internship."}
                     </div>
                   ) : (
                     <div className="internship-status-card internship-status-warning mb-4">
-                      Complete the required course progress and mini test to
-                      become certificate-eligible.
+                      {eligibilityMessage ||
+                        "Complete the required course progress and mini test to become certificate-eligible."}
                     </div>
                   )}
 
@@ -692,8 +746,8 @@ function InternshipDetails() {
                         {loading
                           ? "Processing..."
                           : certificateExists
-                            ? "Download Certificate"
-                            : "Generate Certificate"}
+                          ? "Download Certificate"
+                          : "Generate Certificate"}
                       </button>
                     )}
                   </div>
