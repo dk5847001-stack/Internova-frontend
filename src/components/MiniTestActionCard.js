@@ -6,46 +6,66 @@ function MiniTestActionCard({
   miniTestPassed,
   onOpenMiniTest,
 }) {
-  const isUnlocked = progress >= requiredProgress;
+  const unlocked = progress >= requiredProgress;
 
   return (
-    <div className="course-action-card">
+    <div className="course-action-card premium-action-card mini-test-action-card">
       <div className="course-action-top">
+        <div className="course-action-icon">📝</div>
         <div>
-          <p className="course-action-label">Mini Test</p>
-          <h3>
-            {miniTestPassed
-              ? "Mini Test Passed"
-              : isUnlocked
-              ? "Mini Test Available"
-              : "Mini Test Locked"}
-          </h3>
+          <p className="course-action-kicker">Assessment</p>
+          <h3>Mini Test</h3>
         </div>
-
-        <span
-          className={`course-action-badge ${
-            miniTestPassed ? "success" : isUnlocked ? "info" : "warning"
-          }`}
-        >
-          {miniTestPassed ? "Passed" : isUnlocked ? "Unlocked" : "Locked"}
-        </span>
       </div>
 
       <p className="course-action-text">
-        {miniTestPassed
-          ? "Great work. You have already passed the mini test."
-          : isUnlocked
-          ? "You have completed the required learning progress. You can now take the mini test."
-          : `Complete at least ${requiredProgress}% course progress to unlock the mini test.`}
+        Complete the mini test after reaching the required learning progress.
+        Passing this test is necessary for certificate eligibility.
       </p>
+
+      <div className="course-action-status-group">
+        <div
+          className={`course-action-status-chip ${
+            miniTestPassed
+              ? "success"
+              : unlocked
+              ? "active"
+              : "locked"
+          }`}
+        >
+          {miniTestPassed
+            ? "Passed"
+            : unlocked
+            ? "Unlocked"
+            : "Locked"}
+        </div>
+
+        <div className="course-action-meta">
+          Required Progress: <strong>{requiredProgress}%</strong>
+        </div>
+
+        <div className="course-action-meta">
+          Current Progress: <strong>{progress}%</strong>
+        </div>
+      </div>
 
       <button
         type="button"
-        className={`course-action-btn ${isUnlocked ? "primary" : "disabled"}`}
-        disabled={!isUnlocked}
-        onClick={isUnlocked ? onOpenMiniTest : undefined}
+        className={`course-action-btn ${
+          miniTestPassed
+            ? "success"
+            : unlocked
+            ? "primary"
+            : "disabled"
+        }`}
+        disabled={!unlocked}
+        onClick={onOpenMiniTest}
       >
-        {miniTestPassed ? "View Result" : "Open Mini Test"}
+        {miniTestPassed
+          ? "View Passed Test"
+          : unlocked
+          ? "Start Mini Test"
+          : `Unlock at ${requiredProgress}%`}
       </button>
     </div>
   );

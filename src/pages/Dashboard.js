@@ -162,12 +162,6 @@ function Dashboard() {
         .dashboard-glass-card:hover {
           transform: translateY(-4px);
           -webkit-transform: translateY(-4px);
-          box-shadow:
-            0 28px 75px rgba(15, 23, 42, 0.15),
-            0 10px 24px rgba(59,130,246,0.08);
-          -webkit-box-shadow:
-            0 28px 75px rgba(15, 23, 42, 0.15),
-            0 10px 24px rgba(59,130,246,0.08);
         }
 
         .dashboard-profile-title {
@@ -195,15 +189,6 @@ function Dashboard() {
           border-radius: 20px;
           padding: 16px 18px;
           min-height: 96px;
-          -webkit-transition: all 0.3s ease;
-          transition: all 0.3s ease;
-        }
-
-        .dashboard-info-box:hover {
-          transform: translateY(-3px);
-          -webkit-transform: translateY(-3px);
-          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-          -webkit-box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
         }
 
         .dashboard-info-label {
@@ -284,12 +269,6 @@ function Dashboard() {
         .dashboard-feature-card:hover {
           transform: translateY(-6px);
           -webkit-transform: translateY(-6px);
-          box-shadow:
-            0 28px 75px rgba(15, 23, 42, 0.14),
-            0 10px 24px rgba(59,130,246,0.07);
-          -webkit-box-shadow:
-            0 28px 75px rgba(15, 23, 42, 0.14),
-            0 10px 24px rgba(59,130,246,0.07);
         }
 
         .dashboard-feature-icon {
@@ -371,7 +350,6 @@ function Dashboard() {
         <div className="dashboard-orb dashboard-orb-2"></div>
 
         <div className="container dashboard-shell">
-          {/* HERO */}
           <div className="card dashboard-hero-card border-0 rounded-5 mb-4">
             <div className="card-body p-4 p-md-5">
               <div className="row g-4 align-items-center">
@@ -381,8 +359,8 @@ function Dashboard() {
                     Welcome to Internova, {user?.name || "User"} 👋
                   </h1>
                   <p className="dashboard-hero-subtitle">
-                    track your learning progress, manage course access, download offer
-                    letters, complete mini tests, and generate verified
+                    Track your learning progress, manage course access, download
+                    offer letters, complete mini tests, and generate verified
                     certificates from one elegant dashboard.
                   </p>
                 </div>
@@ -410,7 +388,7 @@ function Dashboard() {
                     <div className="col-12">
                       <div className="dashboard-stat-card">
                         <div className="dashboard-stat-label">Workspace</div>
-                        <h4 className="dashboard-stat-value">Ready to Explore</h4>
+                        <h4 className="dashboard-stat-value">Learning Ready</h4>
                       </div>
                     </div>
                   </div>
@@ -419,15 +397,14 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* PROFILE + QUICK ACTIONS */}
           <div className="row g-4 mb-4">
             <div className="col-lg-7">
               <div className="card dashboard-glass-card border-0 rounded-5 h-100">
                 <div className="card-body p-4 p-md-5">
                   <h2 className="dashboard-profile-title">Your Profile Overview</h2>
                   <p className="dashboard-profile-subtitle">
-                    Keep track of your registered account details and access your
-                    full programs workspace with a clean, premium experience.
+                    Keep track of your account details and access your full
+                    learning workspace with a clean premium experience.
                   </p>
 
                   <div className="dashboard-info-grid">
@@ -466,8 +443,7 @@ function Dashboard() {
                 <div className="card-body p-4 p-md-5">
                   <h3 className="dashboard-panel-title">Quick Actions</h3>
                   <p className="dashboard-panel-subtitle">
-                    Access the most important sections of your Internova account
-                    instantly.
+                    Access the most important sections of your Internova account instantly.
                   </p>
 
                   <div className="d-grid gap-3">
@@ -482,7 +458,7 @@ function Dashboard() {
                       to="/my-purchases"
                       className="btn btn-success dashboard-action-btn"
                     >
-                      My Enrollments
+                      My Enrollments & Progress
                     </Link>
 
                     <Link
@@ -513,16 +489,14 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* FEATURE CARDS */}
           <div className="row g-4">
             <div className="col-md-4">
               <div className="dashboard-feature-card">
                 <div className="dashboard-feature-icon">🚀</div>
                 <h4 className="dashboard-feature-title">Programs</h4>
                 <p className="dashboard-feature-text">
-                  Browse modern domain-based training programs with flexible
-                  durations, guided learning paths, and a clean premium
-                  experience.
+                  Browse domain-based training programs with flexible durations,
+                  guided learning paths, and a clean premium experience.
                 </p>
               </div>
             </div>
@@ -530,10 +504,10 @@ function Dashboard() {
             <div className="col-md-4">
               <div className="dashboard-feature-card">
                 <div className="dashboard-feature-icon">📈</div>
-                <h4 className="dashboard-feature-title">Learning Progress</h4>
+                <h4 className="dashboard-feature-title">Progress</h4>
                 <p className="dashboard-feature-text">
-                  Complete modules, track your progress, attempt mini tests, and
-                  move step-by-step toward certificate eligibility.
+                  Open your course, track real learning progress, unlock mini
+                  tests, and move toward certificate eligibility.
                 </p>
               </div>
             </div>
@@ -544,7 +518,7 @@ function Dashboard() {
                 <h4 className="dashboard-feature-title">Certificates</h4>
                 <p className="dashboard-feature-text">
                   Generate, download, and verify official Internova certificates
-                  with premium branded document support and trusted validation.
+                  with branded document support and trusted validation.
                 </p>
               </div>
             </div>

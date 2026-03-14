@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -15,11 +15,26 @@ function QuizPage() {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [unlocked, setUnlocked] = useState(true);
+  const [requiredProgress, setRequiredProgress] = useState(80);
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const [passMarks, setPassMarks] = useState(60);
+
   const [toast, setToast] = useState({
     show: false,
     type: "success",
     message: "",
   });
+
+  const answeredCount = useMemo(
+    () => answers.filter((item) => item !== -1).length,
+    [answers]
+  );
+
+  const progressPercent = useMemo(() => {
+    if (!quiz.length) return 0;
+    return Math.round((answeredCount / quiz.length) * 100);
+  }, [answeredCount, quiz.length]);
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -31,23 +46,43 @@ function QuizPage() {
 
   const fetchQuiz = async () => {
     try {
-      const { data } = await API.get(`/quiz/${internshipId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      setLoading(true);
 
-      setTitle(data.title);
+      if (!token) {
+        showToast("error", "Please login first");
+        navigate("/");
+        return;
+      }
+
+      const { data } = await API.get(`/quiz/${internshipId}`);
+
+      setTitle(data.title || "");
       setQuiz(data.quiz || []);
       setAnswers(new Array((data.quiz || []).length).fill(-1));
       setLocked(!!data.locked);
       setResult(data.result || null);
+      setUnlocked(data.unlocked !== false);
+      setRequiredProgress(data.requiredProgress || 80);
+      setCurrentProgress(data.currentProgress || 0);
+      setPassMarks(data.passMarks || 60);
     } catch (error) {
-      console.error("Failed to fetch quiz:", error);
-      showToast(
-        "error",
-        error.response?.data?.message || "Failed to load quiz"
-      );
+      const status = error?.response?.status;
+      const message =
+        error?.response?.data?.message || "Failed to load quiz";
+
+      if (status === 403) {
+        setUnlocked(false);
+        setQuiz([]);
+        setAnswers([]);
+        setLocked(false);
+        setResult(null);
+        setRequiredProgress(error?.response?.data?.requiredProgress || 80);
+        setCurrentProgress(error?.response?.data?.currentProgress || 0);
+        showToast("error", message);
+      } else {
+        console.error("Failed to fetch quiz:", error);
+        showToast("error", message);
+      }
     } finally {
       setLoading(false);
     }
@@ -59,12 +94,22 @@ function QuizPage() {
   }, [internshipId]);
 
   const handleOptionChange = (questionIndex, optionIndex) => {
+    if (locked || !unlocked) return;
+
     const updated = [...answers];
     updated[questionIndex] = optionIndex;
     setAnswers(updated);
   };
 
   const handleSubmit = async () => {
+    if (!unlocked) {
+      showToast(
+        "error",
+        `Mini test unlocks after ${requiredProgress}% course progress`
+      );
+      return;
+    }
+
     const unanswered = answers.some((a) => a === -1);
 
     if (unanswered) {
@@ -75,15 +120,9 @@ function QuizPage() {
     try {
       setSubmitting(true);
 
-      const { data } = await API.post(
-        `/quiz/${internshipId}/submit`,
-        { answers },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const { data } = await API.post(`/quiz/${internshipId}/submit`, {
+        answers,
+      });
 
       setResult(data.result);
 
@@ -285,6 +324,8 @@ function QuizPage() {
           border-radius: 24px;
           padding: 22px;
           margin-bottom: 24px;
+          animation: fadeSlideUp 0.45s ease;
+          -webkit-animation: fadeSlideUp 0.45s ease;
         }
 
         .quiz-result-success {
@@ -302,6 +343,8 @@ function QuizPage() {
         .quiz-state-card {
           border-radius: 24px;
           padding: 22px;
+          animation: fadeSlideUp 0.45s ease;
+          -webkit-animation: fadeSlideUp 0.45s ease;
         }
 
         .quiz-state-info {
@@ -316,10 +359,45 @@ function QuizPage() {
           color: #991b1b;
         }
 
+        .quiz-state-warning {
+          background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+          border: 1px solid #fdba74;
+          color: #9a3412;
+        }
+
         .quiz-state-empty {
           background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
           border: 1px solid #cbd5e1;
           color: #334155;
+        }
+
+        .quiz-progress-wrap {
+          margin-bottom: 28px;
+        }
+
+        .quiz-progress-label {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-weight: 700;
+          color: #0f172a;
+          margin-bottom: 12px;
+        }
+
+        .quiz-progress-bar-outer {
+          width: 100%;
+          height: 14px;
+          border-radius: 999px;
+          background: #e2e8f0;
+          overflow: hidden;
+        }
+
+        .quiz-progress-bar-inner {
+          height: 100%;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          transition: width 0.35s ease;
+          -webkit-transition: width 0.35s ease;
         }
 
         .quiz-question-card {
@@ -338,6 +416,8 @@ function QuizPage() {
           margin-bottom: 24px;
           -webkit-transition: all 0.35s ease;
           transition: all 0.35s ease;
+          animation: fadeSlideUp 0.45s ease;
+          -webkit-animation: fadeSlideUp 0.45s ease;
         }
 
         .quiz-question-card:hover {
@@ -349,6 +429,19 @@ function QuizPage() {
           -webkit-box-shadow:
             0 28px 75px rgba(15, 23, 42, 0.13),
             0 10px 24px rgba(59,130,246,0.07);
+        }
+
+        .quiz-question-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 46px;
+          height: 46px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          color: #1d4ed8;
+          font-weight: 800;
+          margin-bottom: 14px;
         }
 
         .quiz-question-title {
@@ -469,6 +562,28 @@ function QuizPage() {
           }
         }
 
+        @keyframes fadeSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @-webkit-keyframes fadeSlideUp {
+          from {
+            opacity: 0;
+            -webkit-transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            -webkit-transform: translateY(0);
+          }
+        }
+
         @media (max-width: 991px) {
           .quiz-hero-title {
             font-size: 1.9rem;
@@ -500,9 +615,8 @@ function QuizPage() {
               style={{
                 position: "fixed",
                 top: "96px",
-                zIndex: 99999,
                 right: "24px",
-                zIndex: 9999,
+                zIndex: 99999,
                 minWidth: "280px",
                 maxWidth: "380px",
               }}
@@ -521,8 +635,9 @@ function QuizPage() {
                 }}
               >
                 <div
-                  className={`fw-bold mb-1 ${toast.type === "success" ? "text-success" : "text-danger"
-                    }`}
+                  className={`fw-bold mb-1 ${
+                    toast.type === "success" ? "text-success" : "text-danger"
+                  }`}
                 >
                   {toast.type === "success" ? "Success" : "Error"}
                 </div>
@@ -538,7 +653,6 @@ function QuizPage() {
             ← Back
           </button>
 
-          {/* HERO */}
           <div className="card quiz-hero border-0 rounded-5 mb-4">
             <div className="card-body p-4 p-md-5">
               <div className="row g-4 align-items-center">
@@ -565,16 +679,14 @@ function QuizPage() {
                       <div className="quiz-stat-card">
                         <div className="quiz-stat-label">Status</div>
                         <h4 className="quiz-stat-value">
-                          {locked ? "Passed" : "Active"}
+                          {locked ? "Passed" : unlocked ? "Active" : "Locked"}
                         </h4>
                       </div>
                     </div>
                     <div className="col-12">
                       <div className="quiz-stat-card">
-                        <div className="quiz-stat-label">Attempts</div>
-                        <h4 className="quiz-stat-value">
-                          {result ? "Attempted" : "New Test"}
-                        </h4>
+                        <div className="quiz-stat-label">Pass Marks</div>
+                        <h4 className="quiz-stat-value">{passMarks}%</h4>
                       </div>
                     </div>
                   </div>
@@ -583,32 +695,65 @@ function QuizPage() {
             </div>
           </div>
 
-          {/* MAIN */}
           <div className="card quiz-main-card border-0 rounded-5">
             <div className="card-body p-4 p-md-5">
+              {!locked && unlocked && quiz.length > 0 && (
+                <div className="quiz-progress-wrap">
+                  <div className="quiz-progress-label">
+                    <span>Attempt Progress</span>
+                    <span>
+                      {answeredCount}/{quiz.length} Answered
+                    </span>
+                  </div>
+                  <div className="quiz-progress-bar-outer">
+                    <div
+                      className="quiz-progress-bar-inner"
+                      style={{ width: `${progressPercent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
               {result && (
                 <div
-                  className={`quiz-result-card ${result.passed ? "quiz-result-success" : "quiz-result-warning"
-                    }`}
+                  className={`quiz-result-card ${
+                    result.passed
+                      ? "quiz-result-success"
+                      : "quiz-result-warning"
+                  }`}
                 >
                   <h5 className="mb-3 fw-bold">
                     {result.passed ? "Test Passed" : "Previous Attempt Result"}
                   </h5>
                   <div className="row g-3">
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <strong>Score:</strong> {result.score}/{result.totalQuestions}
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <strong>Percentage:</strong> {result.percentage}%
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <strong>Status:</strong> {result.passed ? "Passed" : "Failed"}
+                    </div>
+                    <div className="col-md-3">
+                      <strong>Attempt:</strong> {result.attemptNumber || 1}
                     </div>
                   </div>
                 </div>
               )}
 
-              {locked ? (
+              {!unlocked ? (
+                <div className="quiz-state-card quiz-state-warning">
+                  <h5 className="fw-bold mb-2">Mini Test Locked</h5>
+                  <p className="mb-2">
+                    Complete at least <strong>{requiredProgress}%</strong> course
+                    progress to unlock this mini test.
+                  </p>
+                  <p className="mb-0">
+                    Your current progress is <strong>{currentProgress}%</strong>.
+                  </p>
+                </div>
+              ) : locked ? (
                 <div className="quiz-state-card quiz-state-info">
                   <h5 className="fw-bold mb-2">Test Already Passed</h5>
                   <p className="mb-0">
@@ -622,19 +767,18 @@ function QuizPage() {
                     <div className="quiz-state-card quiz-state-danger mb-4">
                       <h5 className="fw-bold mb-2">Retake Available</h5>
                       <p className="mb-0">
-                        You did not pass the previous attempt. Review your
-                        answers carefully and retake the test now.
+                        You did not pass the previous attempt. Review carefully
+                        and retake the test now.
                       </p>
                     </div>
                   )}
 
                   {quiz.map((q, qIndex) => (
                     <div key={qIndex} className="quiz-question-card">
-                      <h5 className="quiz-question-title">
-                        Q{qIndex + 1}. {q.question}
-                      </h5>
+                      <div className="quiz-question-badge">Q{qIndex + 1}</div>
+                      <h5 className="quiz-question-title">{q.question}</h5>
 
-                      {q.options.map((option, oIndex) => (
+                      {(q.options || []).map((option, oIndex) => (
                         <div className="quiz-option-item" key={oIndex}>
                           <input
                             className="quiz-option-input"
@@ -663,8 +807,8 @@ function QuizPage() {
                     {submitting
                       ? "Submitting..."
                       : result && !result.passed
-                        ? "Retake Test"
-                        : "Submit Test"}
+                      ? "Retake Test"
+                      : "Submit Test"}
                   </button>
                 </>
               ) : (

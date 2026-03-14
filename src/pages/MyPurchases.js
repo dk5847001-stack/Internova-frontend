@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -7,6 +7,7 @@ const API_BASE_URL =
 
 function MyPurchases() {
   const [purchases, setPurchases] = useState([]);
+  const [statusMap, setStatusMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [toast, setToast] = useState({
@@ -15,7 +16,6 @@ function MyPurchases() {
     message: "",
   });
 
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   const showToast = (type, message) => {
@@ -26,15 +26,96 @@ function MyPurchases() {
     }, 3000);
   };
 
+  const fetchPurchaseStatuses = async (purchaseList) => {
+    try {
+      const results = await Promise.all(
+        purchaseList.map(async (item) => {
+          const internshipObj = item.internshipId || null;
+          const internshipId = internshipObj?._id || item.internshipId || null;
+
+          if (!internshipId) {
+            return [item._id, null];
+          }
+
+          try {
+            const [progressRes, eligibilityRes] = await Promise.allSettled([
+              API.get(`/progress/course/${internshipId}`),
+              API.get(`/certificates/eligibility/${internshipId}`),
+            ]);
+
+            const progressData =
+              progressRes.status === "fulfilled"
+                ? progressRes.value?.data
+                : null;
+
+            const certificateData =
+              eligibilityRes.status === "fulfilled"
+                ? eligibilityRes.value?.data
+                : null;
+
+            const overallProgress =
+              progressData?.progress?.overallProgress || 0;
+
+            const miniTestUnlockProgress =
+              progressData?.course?.miniTestUnlockProgress || 80;
+
+            const miniTestPassed =
+              progressData?.progress?.miniTestPassed || false;
+
+            const durationCompleted =
+              progressData?.progress?.durationCompleted || false;
+
+            const certificateEligible =
+              certificateData?.progress?.certificateEligible ||
+              certificateData?.eligible ||
+              false;
+
+            const certificateExists = !!certificateData?.certificate;
+
+            return [
+              item._id,
+              {
+                overallProgress,
+                miniTestUnlockProgress,
+                miniTestPassed,
+                durationCompleted,
+                certificateEligible,
+                certificateExists,
+              },
+            ];
+          } catch (error) {
+            console.error("Failed to fetch purchase status:", error);
+            return [
+              item._id,
+              {
+                overallProgress: 0,
+                miniTestUnlockProgress: 80,
+                miniTestPassed: false,
+                durationCompleted: false,
+                certificateEligible: false,
+                certificateExists: false,
+              },
+            ];
+          }
+        })
+      );
+
+      const nextStatusMap = Object.fromEntries(results);
+      setStatusMap(nextStatusMap);
+    } catch (error) {
+      console.error("Failed to fetch purchase statuses:", error);
+    }
+  };
+
   const fetchPurchases = async () => {
     try {
-      const { data } = await API.get("/purchases/my-purchases", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      setLoading(true);
 
-      setPurchases(data.purchases || []);
+      const { data } = await API.get("/purchases/my-purchases");
+      const purchaseList = data.purchases || [];
+
+      setPurchases(purchaseList);
+      await fetchPurchaseStatuses(purchaseList);
     } catch (error) {
       console.error("Failed to fetch purchases:", error);
       showToast("error", "Failed to fetch purchases");
@@ -45,12 +126,13 @@ function MyPurchases() {
 
   useEffect(() => {
     fetchPurchases();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDownload = async (item) => {
     try {
       setDownloadingId(item._id);
+
+      const token = localStorage.getItem("token");
 
       const response = await fetch(
         `${API_BASE_URL}/purchases/offer-letter/${item._id}`,
@@ -121,6 +203,17 @@ function MyPurchases() {
     );
   };
 
+  const enrolledCount = purchases.length;
+
+  const passedCount = useMemo(() => {
+    return purchases.filter((item) => statusMap[item._id]?.miniTestPassed).length;
+  }, [purchases, statusMap]);
+
+  const certificateReadyCount = useMemo(() => {
+    return purchases.filter((item) => statusMap[item._id]?.certificateEligible)
+      .length;
+  }, [purchases, statusMap]);
+
   if (loading) {
     return (
       <div
@@ -132,7 +225,7 @@ function MyPurchases() {
       >
         <div className="text-center">
           <div className="spinner-border text-dark mb-3" role="status"></div>
-          <div className="fw-semibold text-dark">Loading Enrolled...</div>
+          <div className="fw-semibold text-dark">Loading enrollments...</div>
         </div>
       </div>
     );
@@ -194,34 +287,62 @@ function MyPurchases() {
             <div className="row align-items-center g-4">
               <div className="col-lg-8">
                 <div className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-semibold small bg-light text-dark">
-                  INTERNOVA • PURCHASE DASHBOARD
+                  INTERNOVA • ENROLLMENTS DASHBOARD
                 </div>
 
                 <h1 className="fw-bold mb-3" style={{ fontSize: "2rem" }}>
-                  My purchased Internship
+                  My Enrolled Programs
                 </h1>
 
                 <p className="mb-0 text-light" style={{ maxWidth: "720px" }}>
-                  Access your Enrolled Programs, open course content,
-                  download access letters, attempt mini tests, and generate your
-                  final certificates from one place.
+                  Access your purchased programs, open course content, track
+                  progress, attempt mini tests, download offer letters, and
+                  generate final certificates from one place.
                 </p>
               </div>
 
               <div className="col-lg-4">
-                <div
-                  className="rounded-4 p-4 h-100"
-                  style={{
-                    background: "rgba(255,255,255,0.12)",
-                    border: "1px solid rgba(255,255,255,0.16)",
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
-                  <div className="small text-light mb-2">Total Enrollments</div>
-                  <div className="fw-bold fs-2">{purchases.length}</div>
-                  <div className="small text-light mt-2">
-                    Manage all paid programs enrollments and related
-                    documents.
+                <div className="row g-3">
+                  <div className="col-4">
+                    <div
+                      className="rounded-4 p-3 h-100"
+                      style={{
+                        background: "rgba(255,255,255,0.12)",
+                        border: "1px solid rgba(255,255,255,0.16)",
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      <div className="small text-light mb-2">Enrolled</div>
+                      <div className="fw-bold fs-3">{enrolledCount}</div>
+                    </div>
+                  </div>
+
+                  <div className="col-4">
+                    <div
+                      className="rounded-4 p-3 h-100"
+                      style={{
+                        background: "rgba(255,255,255,0.12)",
+                        border: "1px solid rgba(255,255,255,0.16)",
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      <div className="small text-light mb-2">Tests Passed</div>
+                      <div className="fw-bold fs-3">{passedCount}</div>
+                    </div>
+                  </div>
+
+                  <div className="col-4">
+                    <div
+                      className="rounded-4 p-3 h-100"
+                      style={{
+                        background: "rgba(255,255,255,0.12)",
+                        border: "1px solid rgba(255,255,255,0.16)",
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      <div className="small text-light mb-2">Cert Ready</div>
+                      <div className="fw-bold fs-3">{certificateReadyCount}</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -235,9 +356,9 @@ function MyPurchases() {
               <div className="mb-3" style={{ fontSize: "3rem" }}>
                 📘
               </div>
-              <h4 className="fw-bold text-dark mb-2">No Enrolled Found</h4>
+              <h4 className="fw-bold text-dark mb-2">No Enrollments Found</h4>
               <p className="text-secondary mb-0">
-                You have not Enrolled any program yet.
+                You have not enrolled in any program yet.
               </p>
             </div>
           </div>
@@ -251,8 +372,18 @@ function MyPurchases() {
               const branch = item.branch || internshipObj?.branch || "N/A";
               const category = item.category || internshipObj?.category || "N/A";
 
-              console.log("purchase item:", item);
-              console.log("internshipId:", internshipId);
+              const currentStatus = statusMap[item._id] || {
+                overallProgress: 0,
+                miniTestUnlockProgress: 80,
+                miniTestPassed: false,
+                durationCompleted: false,
+                certificateEligible: false,
+                certificateExists: false,
+              };
+
+              const miniTestUnlocked =
+                currentStatus.overallProgress >=
+                currentStatus.miniTestUnlockProgress;
 
               return (
                 <div className="col-lg-6" key={item._id}>
@@ -274,7 +405,7 @@ function MyPurchases() {
                       <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                         <div>
                           <div className="small text-secondary mb-1">
-                            My purchased Internship
+                            Enrolled Program
                           </div>
                           <h4 className="fw-bold text-dark mb-0">
                             {internshipTitle}
@@ -294,12 +425,8 @@ function MyPurchases() {
                               border: "1px solid #e2e8f0",
                             }}
                           >
-                            <div className="small text-secondary mb-1">
-                              Branch
-                            </div>
-                            <div className="fw-semibold text-dark">
-                              {branch}
-                            </div>
+                            <div className="small text-secondary mb-1">Branch</div>
+                            <div className="fw-semibold text-dark">{branch}</div>
                           </div>
                         </div>
 
@@ -314,9 +441,7 @@ function MyPurchases() {
                             <div className="small text-secondary mb-1">
                               Category
                             </div>
-                            <div className="fw-semibold text-dark">
-                              {category}
-                            </div>
+                            <div className="fw-semibold text-dark">{category}</div>
                           </div>
                         </div>
 
@@ -350,6 +475,44 @@ function MyPurchases() {
                             </div>
                             <div className="fw-semibold text-dark">
                               ₹{item.amount}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-sm-6">
+                          <div
+                            className="rounded-4 p-3 h-100"
+                            style={{
+                              background: "#f8fafc",
+                              border: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <div className="small text-secondary mb-1">
+                              Course Progress
+                            </div>
+                            <div className="fw-semibold text-dark">
+                              {currentStatus.overallProgress}%
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-sm-6">
+                          <div
+                            className="rounded-4 p-3 h-100"
+                            style={{
+                              background: "#f8fafc",
+                              border: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <div className="small text-secondary mb-1">
+                              Mini Test
+                            </div>
+                            <div className="fw-semibold text-dark">
+                              {currentStatus.miniTestPassed
+                                ? "Passed"
+                                : miniTestUnlocked
+                                ? "Unlocked"
+                                : `Unlock at ${currentStatus.miniTestUnlockProgress}%`}
                             </div>
                           </div>
                         </div>
@@ -393,11 +556,64 @@ function MyPurchases() {
                         )}
                       </div>
 
+                      <div className="d-flex flex-wrap gap-2 mb-4">
+                        <span
+                          className={`badge rounded-pill px-3 py-2 ${
+                            currentStatus.overallProgress >= 80
+                              ? "bg-success-subtle text-success border"
+                              : "bg-warning-subtle text-warning border"
+                          }`}
+                        >
+                          Progress {currentStatus.overallProgress}%
+                        </span>
+
+                        <span
+                          className={`badge rounded-pill px-3 py-2 ${
+                            currentStatus.miniTestPassed
+                              ? "bg-success-subtle text-success border"
+                              : miniTestUnlocked
+                              ? "bg-primary-subtle text-primary border"
+                              : "bg-secondary-subtle text-dark border"
+                          }`}
+                        >
+                          {currentStatus.miniTestPassed
+                            ? "Mini Test Passed"
+                            : miniTestUnlocked
+                            ? "Mini Test Unlocked"
+                            : "Mini Test Locked"}
+                        </span>
+
+                        <span
+                          className={`badge rounded-pill px-3 py-2 ${
+                            currentStatus.durationCompleted
+                              ? "bg-success-subtle text-success border"
+                              : "bg-secondary-subtle text-dark border"
+                          }`}
+                        >
+                          {currentStatus.durationCompleted
+                            ? "Duration Completed"
+                            : "Duration Pending"}
+                        </span>
+
+                        <span
+                          className={`badge rounded-pill px-3 py-2 ${
+                            currentStatus.certificateEligible
+                              ? "bg-success-subtle text-success border"
+                              : "bg-secondary-subtle text-dark border"
+                          }`}
+                        >
+                          {currentStatus.certificateEligible
+                            ? currentStatus.certificateExists
+                              ? "Certificate Ready"
+                              : "Certificate Eligible"
+                            : "Certificate Locked"}
+                        </span>
+                      </div>
+
                       <div className="d-grid gap-3">
                         <button
                           className="btn btn-primary btn-lg rounded-4 fw-semibold"
                           onClick={() => {
-                            console.log("Open Course clicked:", internshipId);
                             if (internshipId) {
                               navigate(`/course/${internshipId}`);
                             }
@@ -421,32 +637,44 @@ function MyPurchases() {
 
                           <div className="col-md-6">
                             <button
-                              className="btn btn-outline-dark w-100 rounded-4 fw-semibold"
+                              className={`btn w-100 rounded-4 fw-semibold ${
+                                miniTestUnlocked
+                                  ? "btn-outline-dark"
+                                  : "btn-outline-secondary"
+                              }`}
+                              disabled={!miniTestUnlocked}
                               onClick={() => {
-                                console.log("Mini Test clicked:", internshipId);
-                                if (internshipId) {
+                                if (internshipId && miniTestUnlocked) {
                                   navigate(`/quiz/${internshipId}`);
                                 }
                               }}
                             >
-                              Mini Test
+                              {currentStatus.miniTestPassed
+                                ? "View Passed Mini Test"
+                                : miniTestUnlocked
+                                ? "Open Mini Test"
+                                : `Unlock at ${currentStatus.miniTestUnlockProgress}%`}
                             </button>
                           </div>
 
                           <div className="col-12">
                             <button
-                              className="btn btn-outline-success w-100 rounded-4 fw-semibold"
+                              className={`btn w-100 rounded-4 fw-semibold ${
+                                currentStatus.certificateEligible
+                                  ? "btn-outline-success"
+                                  : "btn-outline-secondary"
+                              }`}
                               onClick={() => {
-                                console.log(
-                                  "Certificate clicked:",
-                                  internshipId
-                                );
                                 if (internshipId) {
                                   navigate(`/certificate/${internshipId}`);
                                 }
                               }}
                             >
-                              Certificate Dashboard
+                              {currentStatus.certificateEligible
+                                ? currentStatus.certificateExists
+                                  ? "Download / View Certificate"
+                                  : "Open Certificate Dashboard"
+                                : "Certificate Dashboard"}
                             </button>
                           </div>
                         </div>

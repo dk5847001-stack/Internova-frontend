@@ -1,44 +1,70 @@
 import React from "react";
 
 function CertificateActionCard({ eligibility, onOpenCertificate }) {
-  if (!eligibility) return null;
+  const isEligible = !!eligibility?.eligible;
+  const progressCompleted = !!eligibility?.progressCompleted;
+  const miniTestCompleted = !!eligibility?.miniTestCompleted;
+  const durationCompleted = !!eligibility?.durationCompleted;
 
   return (
-    <div className="course-action-card">
+    <div className="course-action-card premium-action-card certificate-action-card">
       <div className="course-action-top">
+        <div className="course-action-icon">🏆</div>
         <div>
-          <p className="course-action-label">Final Certificate</p>
-          <h3>
-            {eligibility.eligible
-              ? "Certificate Eligible"
-              : "Certificate Locked"}
-          </h3>
+          <p className="course-action-kicker">Certification</p>
+          <h3>Certificate</h3>
         </div>
-
-        <span
-          className={`course-action-badge ${
-            eligibility.eligible ? "success" : "warning"
-          }`}
-        >
-          {eligibility.eligible ? "Eligible" : "Locked"}
-        </span>
       </div>
 
       <p className="course-action-text">
-        {eligibility.eligible
-          ? "You have completed all required conditions. You can now generate your final certificate."
-          : "Certificate will unlock only after required progress, mini test pass, and selected duration completion."}
+        Your internship completion certificate becomes available only after
+        required progress, mini test, and duration conditions are fully met.
       </p>
+
+      <div className="certificate-check-list">
+        <div
+          className={`certificate-check-item ${
+            progressCompleted ? "done" : "pending"
+          }`}
+        >
+          <span>{progressCompleted ? "✅" : "⏳"}</span>
+          <span>Required course progress completed</span>
+        </div>
+
+        <div
+          className={`certificate-check-item ${
+            miniTestCompleted ? "done" : "pending"
+          }`}
+        >
+          <span>{miniTestCompleted ? "✅" : "⏳"}</span>
+          <span>Mini test passed</span>
+        </div>
+
+        <div
+          className={`certificate-check-item ${
+            durationCompleted ? "done" : "pending"
+          }`}
+        >
+          <span>{durationCompleted ? "✅" : "⏳"}</span>
+          <span>Selected duration completed</span>
+        </div>
+      </div>
+
+      <div
+        className={`course-action-status-chip ${
+          isEligible ? "success" : "locked"
+        }`}
+      >
+        {isEligible ? "Eligible Now" : "Locked"}
+      </div>
 
       <button
         type="button"
-        className={`course-action-btn ${
-          eligibility.eligible ? "primary" : "disabled"
-        }`}
-        disabled={!eligibility.eligible}
-        onClick={eligibility.eligible ? onOpenCertificate : undefined}
+        className={`course-action-btn ${isEligible ? "primary" : "disabled"}`}
+        disabled={!isEligible}
+        onClick={onOpenCertificate}
       >
-        {eligibility.eligible ? "Generate Certificate" : "Certificate Locked"}
+        {isEligible ? "Open Certificate" : "Certificate Locked"}
       </button>
     </div>
   );

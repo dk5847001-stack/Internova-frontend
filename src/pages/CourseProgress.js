@@ -43,71 +43,74 @@ function CourseProgress() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadCourseData = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const loadCourseData = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const response = await getCourseProgress(internshipId);
+      const response = await getCourseProgress(internshipId);
 
-        if (!response?.success) {
-          throw new Error(response?.message || "Failed to load course data");
-        }
-
-        const courseData = {
-          id: response.course.id,
-          title: response.course.title,
-          category: response.course.category || "",
-          branch: response.course.branch || "",
-          durationLabel: response.course.duration || `${response.course.durationDays} Days`,
-          durationDays: response.course.durationDays || 30,
-          enrolledDate: response.progress.enrolledAt,
-          status: "In Progress",
-          certificateStatus: response.eligibility?.eligible ? "Eligible" : "Locked",
-          miniTestPassed: response.progress?.miniTestPassed || false,
-          unlockAllPurchased: response.progress?.unlockAllPurchased || false,
-          requiredProgress: response.course.requiredProgress || 80,
-          miniTestUnlockProgress: response.course.miniTestUnlockProgress || 80,
-          miniTestPassMarks: response.course.miniTestPassMarks || 60,
-          unlockAllPrice: response.course.unlockAllPrice || 99,
-        };
-
-        const modulesData = (response.modules || []).map((module) => ({
-          ...module,
-          id: module._id,
-          videos: (module.videos || []).map((video) => {
-            const matchedProgress = (response.progress?.videoProgress || []).find(
-              (vp) => vp.videoId?.toString() === video._id?.toString()
-            );
-
-            return {
-              id: video._id,
-              title: video.title,
-              description: video.description || "",
-              duration: video.duration || "",
-              videoUrl: video.videoUrl,
-              watchedPercent: matchedProgress?.watchedPercent || 0,
-              completed: matchedProgress?.completed || false,
-            };
-          }),
-        }));
-
-        setCourse(courseData);
-        setModules(modulesData);
-      } catch (err) {
-        console.error("Failed to load course data:", err);
-        setError(
-          err?.message || "We could not load your course right now. Please try again."
-        );
-      } finally {
-        setLoading(false);
+      if (!response?.success) {
+        throw new Error(response?.message || "Failed to load course data");
       }
-    };
 
+      const courseData = {
+        id: response.course.id,
+        title: response.course.title,
+        category: response.course.category || "",
+        branch: response.course.branch || "",
+        durationLabel:
+          response.course.duration || `${response.course.durationDays} Days`,
+        durationDays: response.course.durationDays || 30,
+        enrolledDate: response.progress.enrolledAt,
+        status: "In Progress",
+        certificateStatus: response.eligibility?.eligible ? "Eligible" : "Locked",
+        miniTestPassed: response.progress?.miniTestPassed || false,
+        unlockAllPurchased: response.progress?.unlockAllPurchased || false,
+        requiredProgress: response.course.requiredProgress || 80,
+        miniTestUnlockProgress: response.course.miniTestUnlockProgress || 80,
+        miniTestPassMarks: response.course.miniTestPassMarks || 60,
+        unlockAllPrice: response.course.unlockAllPrice || 99,
+      };
+
+      const modulesData = (response.modules || []).map((module) => ({
+        ...module,
+        id: module._id,
+        videos: (module.videos || []).map((video) => {
+          const matchedProgress = (response.progress?.videoProgress || []).find(
+            (vp) => vp.videoId?.toString() === video._id?.toString()
+          );
+
+          return {
+            id: video._id,
+            title: video.title,
+            description: video.description || "",
+            duration: video.duration || "",
+            videoUrl: video.videoUrl,
+            watchedPercent: matchedProgress?.watchedPercent || 0,
+            completed: matchedProgress?.completed || false,
+          };
+        }),
+      }));
+
+      setCourse(courseData);
+      setModules(modulesData);
+    } catch (err) {
+      console.error("Failed to load course data:", err);
+      setError(
+        err?.message ||
+          "We could not load your course right now. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (internshipId) {
       loadCourseData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internshipId]);
 
   const derivedData = useMemo(() => {
@@ -215,32 +218,39 @@ function CourseProgress() {
     }
   };
 
-const handleTrackedProgress = async (percent) => {
-  if (!selectedVideo || !selectedModule || !internshipId) return;
+  const handleTrackedProgress = async (percent) => {
+    if (!selectedVideo || !selectedModule || !internshipId) return;
 
-  try {
-    const response = await updateVideoProgress(internshipId, {
-      moduleId: selectedModule.id || selectedModule._id,
-      videoId: selectedVideo.id,
-      watchedPercent: percent,
-    });
+    try {
+      const response = await updateVideoProgress(internshipId, {
+        moduleId: selectedModule.id || selectedModule._id,
+        videoId: selectedVideo.id,
+        watchedPercent: percent,
+      });
 
-    if (!response?.success) {
-      throw new Error(response?.message || "Failed to update tracked progress");
+      if (!response?.success) {
+        throw new Error(response?.message || "Failed to update tracked progress");
+      }
+
+      setModules((prev) => markVideoProgress(prev, selectedVideo.id, percent));
+
+      if (percent >= 80) {
+        setCourse((prev) => ({
+          ...prev,
+          miniTestPassed: prev?.miniTestPassed || false,
+        }));
+      }
+    } catch (error) {
+      console.error("Tracked progress update failed:", error);
     }
-
-    setModules((prev) => markVideoProgress(prev, selectedVideo.id, percent));
-  } catch (error) {
-    console.error("Tracked progress update failed:", error);
-  }
-};
+  };
 
   const handleMarkDemoProgress = async (percent) => {
     if (!selectedVideo || !selectedModule || !internshipId) return;
 
     try {
       const response = await updateVideoProgress(internshipId, {
-        moduleId: selectedModule._id || selectedModule.id,
+        moduleId: selectedModule.id || selectedModule._id,
         videoId: selectedVideo.id,
         watchedPercent: percent,
       });
@@ -261,7 +271,7 @@ const handleTrackedProgress = async (percent) => {
 
     try {
       const response = await updateVideoProgress(internshipId, {
-        moduleId: selectedModule._id || selectedModule.id,
+        moduleId: selectedModule.id || selectedModule._id,
         videoId: selectedVideo.id,
         watchedPercent: 100,
       });
@@ -287,6 +297,9 @@ const handleTrackedProgress = async (percent) => {
   };
 
   const handleOpenMiniTest = () => {
+    if (derivedData?.overallProgress < (course?.miniTestUnlockProgress || 80)) {
+      return;
+    }
     navigate(`/quiz/${internshipId}`);
   };
 
@@ -401,26 +414,26 @@ const handleTrackedProgress = async (percent) => {
           />
 
           <VideoPlayerSection
-  selectedModule={selectedModule}
-  selectedVideo={selectedVideo}
-  onPreviousVideo={handlePreviousVideo}
-  onNextVideo={handleNextVideo}
-  onTrackedProgress={handleTrackedProgress}
-  onMarkDemoProgress={handleMarkDemoProgress}
-  onVideoEnded={handleVideoEnded}
-  hasPreviousVideo={
-    derivedData?.allUnlockedVideos?.findIndex(
-      (item) => item.video.id === selectedVideo?.id
-    ) > 0
-  }
-  hasNextVideo={Boolean(derivedData?.nextVideoItem)}
-/>
+            selectedModule={selectedModule}
+            selectedVideo={selectedVideo}
+            onPreviousVideo={handlePreviousVideo}
+            onNextVideo={handleNextVideo}
+            onTrackedProgress={handleTrackedProgress}
+            onMarkDemoProgress={handleMarkDemoProgress}
+            onVideoEnded={handleVideoEnded}
+            hasPreviousVideo={
+              derivedData?.allUnlockedVideos?.findIndex(
+                (item) => item.video.id === selectedVideo?.id
+              ) > 0
+            }
+            hasNextVideo={Boolean(derivedData?.nextVideoItem)}
+          />
         </div>
 
         <div className="course-actions-grid">
           <MiniTestActionCard
             progress={derivedData.overallProgress}
-            requiredProgress={course.requiredProgress}
+            requiredProgress={course.miniTestUnlockProgress || course.requiredProgress}
             miniTestPassed={course.miniTestPassed}
             onOpenMiniTest={handleOpenMiniTest}
           />
