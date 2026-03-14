@@ -469,12 +469,21 @@ function Dashboard() {
                     </Link>
 
                     {user?.role === "admin" && (
-                      <Link
-                        to="/admin/internships"
-                        className="btn btn-outline-primary dashboard-action-btn"
-                      >
-                        Manage Internships
-                      </Link>
+                      <>
+                        <Link
+                          to="/admin/dashboard"
+                          className="btn btn-outline-primary dashboard-action-btn"
+                        >
+                          Admin Dashboard
+                        </Link>
+
+                        <Link
+                          to="/admin/internships"
+                          className="btn btn-outline-dark dashboard-action-btn"
+                        >
+                          Manage Internships
+                        </Link>
+                      </>
                     )}
 
                     <button

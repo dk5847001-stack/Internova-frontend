@@ -30,6 +30,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import "bootstrap/dist/css/bootstrap.min.css";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function AppLayout() {
   const location = useLocation();
@@ -98,6 +99,15 @@ function AppLayout() {
             </ProtectedRoute>
           }
         />
+
+          <Route
+  path="/admin/dashboard"
+  element={
+    <RequireAdmin>
+      <AdminDashboard />
+    </RequireAdmin>
+  }
+/>
 
         <Route
           path="/certificate/:internshipId"
