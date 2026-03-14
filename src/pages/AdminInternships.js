@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import API from "../services/api";
 
 const makeDuration = () => ({
@@ -43,6 +43,76 @@ const moveItem = (list, fromIndex, toIndex) => {
   return updated;
 };
 
+const sanitizeImportedData = (data = {}) => {
+  const durations = Array.isArray(data.durations) && data.durations.length
+    ? reOrderList(
+        data.durations.map((d) => ({
+          label: d?.label || "",
+          price: Number(d?.price || 0),
+          durationDays: Number(d?.durationDays || 30),
+        }))
+      )
+    : initialForm.durations;
+
+  const modules = Array.isArray(data.modules) && data.modules.length
+    ? reOrderList(
+        data.modules.map((m, index) => ({
+          title: m?.title || "",
+          description: m?.description || "",
+          unlockDay: Number(m?.unlockDay || index + 1),
+          order: Number(m?.order || index + 1),
+          videos:
+            Array.isArray(m?.videos) && m.videos.length
+              ? reOrderList(
+                  m.videos.map((v, vIndex) => ({
+                    title: v?.title || "",
+                    description: v?.description || "",
+                    videoUrl: v?.videoUrl || "",
+                    duration: v?.duration || "",
+                    order: Number(v?.order || vIndex + 1),
+                  }))
+                )
+              : [makeVideo()],
+        })),
+        (module) => ({
+          ...module,
+          videos: reOrderList(module.videos || []),
+        })
+      )
+    : [makeModule()];
+
+  const quiz = Array.isArray(data.quiz) && data.quiz.length
+    ? data.quiz.map((q) => ({
+        question: q?.question || "",
+        options:
+          Array.isArray(q?.options) && q.options.length === 4
+            ? q.options.map((opt) => opt || "")
+            : ["", "", "", ""],
+        correctAnswer: Number(q?.correctAnswer || 0),
+      }))
+    : [makeQuizQuestion()];
+
+  return {
+    title: data.title || "",
+    slug: data.slug || "",
+    branch: data.branch || "",
+    category: data.category || "",
+    description: data.description || "",
+    thumbnail: data.thumbnail || "",
+    image: data.image || "",
+    requiredProgress: Number(data.requiredProgress || 80),
+    miniTestUnlockProgress: Number(data.miniTestUnlockProgress || 80),
+    miniTestPassMarks: Number(data.miniTestPassMarks || 60),
+    unlockAllPrice: Number(data.unlockAllPrice || 99),
+    certificateEnabled:
+      typeof data.certificateEnabled === "boolean" ? data.certificateEnabled : true,
+    isActive: typeof data.isActive === "boolean" ? data.isActive : true,
+    durations,
+    modules,
+    quiz,
+  };
+};
+
 const initialForm = {
   title: "",
   slug: "",
@@ -72,6 +142,8 @@ function AdminInternships() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [previewVideo, setPreviewVideo] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const [toast, setToast] = useState({
     show: false,
@@ -478,67 +550,7 @@ function AdminInternships() {
       const { data } = await API.get(`/internships/${id}`);
       const internship = data.internship;
 
-      const nextForm = {
-        title: internship.title || "",
-        slug: internship.slug || "",
-        branch: internship.branch || "",
-        category: internship.category || "",
-        description: internship.description || "",
-        thumbnail: internship.thumbnail || "",
-        image: internship.image || "",
-        requiredProgress: internship.requiredProgress || 80,
-        miniTestUnlockProgress: internship.miniTestUnlockProgress || 80,
-        miniTestPassMarks: internship.miniTestPassMarks || 60,
-        unlockAllPrice: internship.unlockAllPrice || 99,
-        certificateEnabled:
-          typeof internship.certificateEnabled === "boolean"
-            ? internship.certificateEnabled
-            : true,
-        isActive:
-          typeof internship.isActive === "boolean" ? internship.isActive : true,
-        durations: internship.durations?.length
-          ? reOrderList(
-              internship.durations.map((d) => ({
-                label: d.label || "",
-                price: d.price || 0,
-                durationDays: d.durationDays || 30,
-                order: d.order || 1,
-              }))
-            )
-          : initialForm.durations,
-        modules: internship.modules?.length
-          ? reOrderList(
-              internship.modules.map((m, index) => ({
-                title: m.title || "",
-                description: m.description || "",
-                unlockDay: m.unlockDay || index + 1,
-                order: m.order || index + 1,
-                videos: m.videos?.length
-                  ? reOrderList(
-                      m.videos.map((v, vIndex) => ({
-                        title: v.title || "",
-                        description: v.description || "",
-                        videoUrl: v.videoUrl || "",
-                        duration: v.duration || "",
-                        order: v.order || vIndex + 1,
-                      }))
-                    )
-                  : [makeVideo()],
-              })),
-              (module) => ({
-                ...module,
-                videos: reOrderList(module.videos || []),
-              })
-            )
-          : [makeModule()],
-        quiz: internship.quiz?.length
-          ? internship.quiz.map((q) => ({
-              question: q.question || "",
-              options: q.options?.length === 4 ? q.options : ["", "", "", ""],
-              correctAnswer: Number(q.correctAnswer || 0),
-            }))
-          : [makeQuizQuestion()],
-      };
+      const nextForm = sanitizeImportedData(internship);
 
       setFormData(nextForm);
       setEditingId(id);
@@ -556,6 +568,34 @@ function AdminInternships() {
     }
   };
 
+  const handleDuplicate = async (id) => {
+    try {
+      const { data } = await API.get(`/internships/${id}`);
+      const internship = data.internship;
+
+      const duplicated = sanitizeImportedData({
+        ...internship,
+        title: `${internship.title || "Internship"} Copy`,
+        slug: internship.slug ? `${internship.slug}-copy` : "",
+        isActive: false,
+      });
+
+      setFormData(duplicated);
+      setEditingId(null);
+
+      const firstPreview =
+        duplicated.modules?.find((module) => module.videos?.length)?.videos?.[0] ||
+        null;
+      setPreviewVideo(firstPreview);
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      showToast("success", "Internship duplicated into form");
+    } catch (error) {
+      console.error("Duplicate internship failed:", error);
+      showToast("error", "Failed to duplicate internship");
+    }
+  };
+
   const handleDelete = async (id) => {
     const ok = window.confirm("Are you sure you want to delete this internship?");
     if (!ok) return;
@@ -570,6 +610,66 @@ function AdminInternships() {
         "error",
         error.response?.data?.message || "Failed to delete internship"
       );
+    }
+  };
+
+  const handleExportJson = () => {
+    try {
+      const payload = buildPayload();
+      const fileName = `${(payload.title || "internship")
+        .replace(/[^a-z0-9]/gi, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")}_export.json`;
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      showToast("success", "Internship JSON exported successfully");
+    } catch (error) {
+      console.error("Export JSON failed:", error);
+      showToast("error", "Failed to export JSON");
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportJson = async (event) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const importedForm = sanitizeImportedData(parsed);
+
+      setFormData(importedForm);
+      setEditingId(null);
+
+      const firstPreview =
+        importedForm.modules?.find((module) => module.videos?.length)?.videos?.[0] ||
+        null;
+      setPreviewVideo(firstPreview);
+
+      showToast("success", "Internship JSON imported successfully");
+    } catch (error) {
+      console.error("Import JSON failed:", error);
+      showToast("error", "Invalid JSON file");
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -988,9 +1088,8 @@ function AdminInternships() {
                   <div className="admin-chip">Internova Admin Control Center</div>
                   <h1 className="admin-hero-title">Admin Internship Manager</h1>
                   <p className="admin-hero-text">
-                    Create, edit, organize, preview, and manage internship programs,
-                    pricing, modules, videos, and quiz order from one premium
-                    admin workspace.
+                    Create, edit, preview, duplicate, import, export, and manage
+                    internship programs from one premium admin workspace.
                   </p>
                 </div>
 
@@ -1012,8 +1111,8 @@ function AdminInternships() {
                     </div>
                     <div className="col-12">
                       <div className="admin-stat-card">
-                        <div className="admin-stat-label">Preview</div>
-                        <h4 className="admin-stat-value">Live</h4>
+                        <div className="admin-stat-label">Tools</div>
+                        <h4 className="admin-stat-value">Import / Export</h4>
                       </div>
                     </div>
                   </div>
@@ -1024,13 +1123,43 @@ function AdminInternships() {
 
           <div className="card admin-glass-card border-0 rounded-5 overflow-hidden mb-4">
             <div className="card-body p-4 p-md-5">
-              <h3 className="admin-section-title">
-                {editingId ? "Edit Program" : "Create Program"}
-              </h3>
-              <p className="admin-section-subtitle">
-                Build a complete program with pricing, course content, unlock
-                schedule, and mini test structure.
-              </p>
+              <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                  <h3 className="admin-section-title">
+                    {editingId ? "Edit Program" : "Create Program"}
+                  </h3>
+                  <p className="admin-section-subtitle mb-0">
+                    Build a complete program with pricing, course content, unlock
+                    schedule, and mini test structure.
+                  </p>
+                </div>
+
+                <div className="admin-inline-actions">
+                  <button
+                    type="button"
+                    className="btn btn-outline-dark admin-action-btn"
+                    onClick={handleExportJson}
+                  >
+                    Export JSON
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary admin-action-btn"
+                    onClick={handleImportClick}
+                  >
+                    Import JSON
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/json"
+                    style={{ display: "none" }}
+                    onChange={handleImportJson}
+                  />
+                </div>
+              </div>
 
               <form onSubmit={handleSubmit}>
                 <div className="row g-3 mb-4">
@@ -1751,7 +1880,7 @@ function AdminInternships() {
             <div className="card-body p-4 p-md-5">
               <h3 className="admin-section-title">Existing Internships</h3>
               <p className="admin-section-subtitle">
-                Review, edit, or remove existing programs from your admin inventory.
+                Review, edit, duplicate, export, or remove existing programs from your admin inventory.
               </p>
 
               <div className="row g-4">
@@ -1785,6 +1914,13 @@ function AdminInternships() {
                             onClick={() => handleEdit(item._id)}
                           >
                             Edit
+                          </button>
+
+                          <button
+                            className="btn btn-outline-primary admin-action-btn"
+                            onClick={() => handleDuplicate(item._id)}
+                          >
+                            Duplicate
                           </button>
 
                           <button
