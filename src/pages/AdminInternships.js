@@ -1,25 +1,55 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 
+const makeDuration = () => ({
+  label: "",
+  price: 0,
+  durationDays: 30,
+});
+
+const makeVideo = () => ({
+  title: "",
+  description: "",
+  videoUrl: "",
+  duration: "",
+  order: 1,
+});
+
+const makeModule = () => ({
+  title: "",
+  description: "",
+  unlockDay: 1,
+  order: 1,
+  videos: [makeVideo()],
+});
+
+const makeQuizQuestion = () => ({
+  question: "",
+  options: ["", "", "", ""],
+  correctAnswer: 0,
+});
+
 const initialForm = {
   title: "",
+  slug: "",
   branch: "",
   category: "",
   description: "",
   thumbnail: "",
+  image: "",
+  requiredProgress: 80,
+  miniTestUnlockProgress: 80,
+  miniTestPassMarks: 60,
+  unlockAllPrice: 99,
+  certificateEnabled: true,
+  isActive: true,
   durations: [
-    { label: "1 Month", price: 1 },
-    { label: "3 Months", price: 990 },
-    { label: "6 Months", price: 1490 },
+    { label: "1 Month", price: 1, durationDays: 30 },
+    { label: "3 Months", price: 990, durationDays: 90 },
+    { label: "6 Months", price: 1490, durationDays: 180 },
   ],
-  modules: [{ title: "", description: "" }],
-  quiz: [
-    {
-      question: "",
-      options: ["", "", "", ""],
-      correctAnswer: 0,
-    },
-  ],
+  modules: [makeModule()],
+  quiz: [makeQuizQuestion()],
 };
 
 function AdminInternships() {
@@ -27,7 +57,6 @@ function AdminInternships() {
   const [formData, setFormData] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   const [toast, setToast] = useState({
     show: false,
@@ -44,7 +73,7 @@ function AdminInternships() {
 
   const fetchInternships = async () => {
     try {
-      const { data } = await API.get("/internships");
+      const { data } = await API.get("/internships/admin/all");
       setInternships(data.internships || []);
     } catch (error) {
       console.error("Failed to fetch programs:", error);
@@ -57,21 +86,102 @@ function AdminInternships() {
   }, []);
 
   const handleBasicChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : [
+              "requiredProgress",
+              "miniTestUnlockProgress",
+              "miniTestPassMarks",
+              "unlockAllPrice",
+            ].includes(name)
+          ? Number(value)
+          : value,
     }));
   };
 
   const handleDurationChange = (index, field, value) => {
     const updated = [...formData.durations];
-    updated[index][field] = field === "price" ? Number(value) : value;
+    updated[index][field] =
+      field === "price" || field === "durationDays" || field === "order"
+        ? Number(value)
+        : value;
     setFormData((prev) => ({ ...prev, durations: updated }));
+  };
+
+  const addDuration = () => {
+    setFormData((prev) => ({
+      ...prev,
+      durations: [...prev.durations, makeDuration()],
+    }));
+  };
+
+  const removeDuration = (index) => {
+    if (formData.durations.length === 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      durations: prev.durations.filter((_, i) => i !== index),
+    }));
   };
 
   const handleModuleChange = (index, field, value) => {
     const updated = [...formData.modules];
-    updated[index][field] = value;
+    updated[index][field] =
+      field === "unlockDay" || field === "order" ? Number(value) : value;
+    setFormData((prev) => ({ ...prev, modules: updated }));
+  };
+
+  const addModule = () => {
+    setFormData((prev) => ({
+      ...prev,
+      modules: [
+        ...prev.modules,
+        {
+          ...makeModule(),
+          order: prev.modules.length + 1,
+          unlockDay: prev.modules.length + 1,
+        },
+      ],
+    }));
+  };
+
+  const removeModule = (index) => {
+    if (formData.modules.length === 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      modules: prev.modules.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleVideoChange = (moduleIndex, videoIndex, field, value) => {
+    const updated = [...formData.modules];
+    updated[moduleIndex].videos[videoIndex][field] =
+      field === "order" ? Number(value) : value;
+
+    setFormData((prev) => ({ ...prev, modules: updated }));
+  };
+
+  const addVideo = (moduleIndex) => {
+    const updated = [...formData.modules];
+    updated[moduleIndex].videos.push({
+      ...makeVideo(),
+      order: updated[moduleIndex].videos.length + 1,
+    });
+
+    setFormData((prev) => ({ ...prev, modules: updated }));
+  };
+
+  const removeVideo = (moduleIndex, videoIndex) => {
+    const updated = [...formData.modules];
+    if (updated[moduleIndex].videos.length === 1) return;
+    updated[moduleIndex].videos = updated[moduleIndex].videos.filter(
+      (_, i) => i !== videoIndex
+    );
+
     setFormData((prev) => ({ ...prev, modules: updated }));
   };
 
@@ -88,20 +198,18 @@ function AdminInternships() {
     setFormData((prev) => ({ ...prev, quiz: updated }));
   };
 
-  const addModule = () => {
-    setFormData((prev) => ({
-      ...prev,
-      modules: [...prev.modules, { title: "", description: "" }],
-    }));
-  };
-
   const addQuizQuestion = () => {
     setFormData((prev) => ({
       ...prev,
-      quiz: [
-        ...prev.quiz,
-        { question: "", options: ["", "", "", ""], correctAnswer: 0 },
-      ],
+      quiz: [...prev.quiz, makeQuizQuestion()],
+    }));
+  };
+
+  const removeQuizQuestion = (qIndex) => {
+    if (formData.quiz.length === 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      quiz: prev.quiz.filter((_, i) => i !== qIndex),
     }));
   };
 
@@ -111,56 +219,88 @@ function AdminInternships() {
     showToast("success", "Form reset successfully");
   };
 
+  const buildPayload = () => {
+    return {
+      title: formData.title.trim(),
+      slug: formData.slug.trim(),
+      branch: formData.branch.trim(),
+      category: formData.category.trim(),
+      description: formData.description.trim(),
+      thumbnail: formData.thumbnail.trim(),
+      image: formData.image.trim(),
+      requiredProgress: Number(formData.requiredProgress),
+      miniTestUnlockProgress: Number(formData.miniTestUnlockProgress),
+      miniTestPassMarks: Number(formData.miniTestPassMarks),
+      unlockAllPrice: Number(formData.unlockAllPrice),
+      certificateEnabled: !!formData.certificateEnabled,
+      isActive: !!formData.isActive,
+
+      durations: formData.durations
+        .filter((d) => d.label.trim())
+        .map((d, index) => ({
+          label: d.label.trim(),
+          price: Number(d.price),
+          durationDays: Number(d.durationDays || 30),
+          order: index + 1,
+        })),
+
+      modules: formData.modules
+        .filter((m) => m.title.trim())
+        .map((m, index) => ({
+          title: m.title.trim(),
+          description: m.description.trim(),
+          unlockDay: Number(m.unlockDay || index + 1),
+          order: Number(m.order || index + 1),
+          videos: (m.videos || [])
+            .filter((v) => v.title.trim() && v.videoUrl.trim())
+            .map((v, vIndex) => ({
+              title: v.title.trim(),
+              description: v.description.trim(),
+              videoUrl: v.videoUrl.trim(),
+              duration: v.duration.trim(),
+              order: Number(v.order || vIndex + 1),
+            })),
+        })),
+
+      quiz: formData.quiz
+        .filter(
+          (q) =>
+            q.question.trim() &&
+            Array.isArray(q.options) &&
+            q.options.length === 4 &&
+            q.options.every((opt) => opt.trim() !== "")
+        )
+        .map((q) => ({
+          question: q.question.trim(),
+          options: q.options.map((opt) => opt.trim()),
+          correctAnswer: Number(q.correctAnswer),
+        })),
+    };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setLoading(true);
 
-      const payload = {
-  ...formData,
-  durations: formData.durations
-    .filter((d) => d.label.trim() && Number(d.price) >= 0)
-    .map((d) => ({
-      label: d.label.trim(),
-      price: Number(d.price),
-    })),
+      const payload = buildPayload();
 
-  modules: formData.modules
-    .filter((m) => m.title.trim())
-    .map((m) => ({
-      title: m.title.trim(),
-      description: m.description.trim(),
-    })),
+      if (!payload.title || !payload.branch || !payload.description) {
+        showToast("error", "Title, branch and description are required");
+        return;
+      }
 
-  quiz: formData.quiz
-    .filter(
-      (q) =>
-        q.question.trim() &&
-        Array.isArray(q.options) &&
-        q.options.length === 4 &&
-        q.options.every((opt) => opt.trim() !== "")
-    )
-    .map((q) => ({
-      question: q.question.trim(),
-      options: q.options.map((opt) => opt.trim()),
-      correctAnswer: Number(q.correctAnswer),
-    })),
-};
+      if (!payload.durations.length) {
+        showToast("error", "At least one duration is required");
+        return;
+      }
 
       if (editingId) {
-        await API.put(`/internships/${editingId}`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await API.put(`/internships/${editingId}`, payload);
         showToast("success", "Internship updated successfully");
       } else {
-        await API.post("/internships", payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await API.post("/internships", payload);
         showToast("success", "Internship created successfully");
       }
 
@@ -184,19 +324,54 @@ function AdminInternships() {
 
       setFormData({
         title: internship.title || "",
+        slug: internship.slug || "",
         branch: internship.branch || "",
         category: internship.category || "",
         description: internship.description || "",
         thumbnail: internship.thumbnail || "",
+        image: internship.image || "",
+        requiredProgress: internship.requiredProgress || 80,
+        miniTestUnlockProgress: internship.miniTestUnlockProgress || 80,
+        miniTestPassMarks: internship.miniTestPassMarks || 60,
+        unlockAllPrice: internship.unlockAllPrice || 99,
+        certificateEnabled:
+          typeof internship.certificateEnabled === "boolean"
+            ? internship.certificateEnabled
+            : true,
+        isActive:
+          typeof internship.isActive === "boolean" ? internship.isActive : true,
         durations: internship.durations?.length
-          ? internship.durations
+          ? internship.durations.map((d) => ({
+              label: d.label || "",
+              price: d.price || 0,
+              durationDays: d.durationDays || 30,
+              order: d.order || 1,
+            }))
           : initialForm.durations,
         modules: internship.modules?.length
-          ? internship.modules
-          : [{ title: "", description: "" }],
+          ? internship.modules.map((m, index) => ({
+              title: m.title || "",
+              description: m.description || "",
+              unlockDay: m.unlockDay || index + 1,
+              order: m.order || index + 1,
+              videos: m.videos?.length
+                ? m.videos.map((v, vIndex) => ({
+                    title: v.title || "",
+                    description: v.description || "",
+                    videoUrl: v.videoUrl || "",
+                    duration: v.duration || "",
+                    order: v.order || vIndex + 1,
+                  }))
+                : [makeVideo()],
+            }))
+          : [makeModule()],
         quiz: internship.quiz?.length
-          ? internship.quiz
-          : [{ question: "", options: ["", "", "", ""], correctAnswer: 0 }],
+          ? internship.quiz.map((q) => ({
+              question: q.question || "",
+              options: q.options?.length === 4 ? q.options : ["", "", "", ""],
+              correctAnswer: Number(q.correctAnswer || 0),
+            }))
+          : [makeQuizQuestion()],
       });
 
       setEditingId(id);
@@ -213,11 +388,7 @@ function AdminInternships() {
     if (!ok) return;
 
     try {
-      await API.delete(`/internships/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await API.delete(`/internships/${id}`);
       showToast("success", "Internship deleted successfully");
       fetchInternships();
     } catch (error) {
@@ -285,9 +456,6 @@ function AdminInternships() {
           box-shadow:
             0 24px 70px rgba(15, 23, 42, 0.16),
             0 8px 24px rgba(59,130,246,0.08);
-          -webkit-box-shadow:
-            0 24px 70px rgba(15, 23, 42, 0.16),
-            0 8px 24px rgba(59,130,246,0.08);
         }
 
         .admin-hero::before {
@@ -339,13 +507,6 @@ function AdminInternships() {
           border-radius: 22px;
           padding: 18px;
           height: 100%;
-          -webkit-transition: all 0.3s ease;
-          transition: all 0.3s ease;
-        }
-
-        .admin-stat-card:hover {
-          transform: translateY(-4px);
-          -webkit-transform: translateY(-4px);
         }
 
         .admin-stat-label {
@@ -367,9 +528,6 @@ function AdminInternships() {
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           box-shadow:
-            0 24px 70px rgba(15, 23, 42, 0.14),
-            0 8px 24px rgba(59,130,246,0.08);
-          -webkit-box-shadow:
             0 24px 70px rgba(15, 23, 42, 0.14),
             0 8px 24px rgba(59,130,246,0.08);
         }
@@ -400,8 +558,6 @@ function AdminInternships() {
           border-radius: 16px;
           border: 1px solid #dbe3f0;
           background: #f8fafc;
-          -webkit-transition: all 0.3s ease;
-          transition: all 0.3s ease;
         }
 
         .admin-textarea {
@@ -409,29 +565,11 @@ function AdminInternships() {
           resize: vertical;
         }
 
-        .admin-input:focus,
-        .admin-textarea:focus,
-        .admin-select:focus {
-          border-color: #60a5fa;
-          background: #fff;
-          box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
-          -webkit-box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
-        }
-
         .admin-sub-card {
           background: #f8fafc;
           border: 1px solid #e2e8f0;
           border-radius: 24px;
           padding: 20px;
-          -webkit-transition: all 0.3s ease;
-          transition: all 0.3s ease;
-        }
-
-        .admin-sub-card:hover {
-          transform: translateY(-3px);
-          -webkit-transform: translateY(-3px);
-          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-          -webkit-box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
         }
 
         .admin-mini-title {
@@ -442,28 +580,15 @@ function AdminInternships() {
         }
 
         .admin-action-btn {
-          min-height: 52px;
+          min-height: 48px;
           border-radius: 16px;
           font-weight: 800;
-          -webkit-transition: all 0.32s ease;
-          transition: all 0.32s ease;
-        }
-
-        .admin-action-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          -webkit-transform: translateY(-2px);
         }
 
         .admin-primary-btn {
           border: none;
           color: #fff;
           background: linear-gradient(135deg, #0b1736 0%, #142850 40%, #1d4ed8 100%);
-          box-shadow:
-            0 18px 35px rgba(29, 78, 216, 0.18),
-            0 8px 20px rgba(11, 23, 54, 0.14);
-          -webkit-box-shadow:
-            0 18px 35px rgba(29, 78, 216, 0.18),
-            0 8px 20px rgba(11, 23, 54, 0.14);
         }
 
         .admin-primary-btn:hover {
@@ -479,23 +604,7 @@ function AdminInternships() {
           box-shadow:
             0 22px 65px rgba(15, 23, 42, 0.10),
             0 8px 20px rgba(59,130,246,0.05);
-          -webkit-box-shadow:
-            0 22px 65px rgba(15, 23, 42, 0.10),
-            0 8px 20px rgba(59,130,246,0.05);
           height: 100%;
-          -webkit-transition: all 0.35s ease;
-          transition: all 0.35s ease;
-        }
-
-        .admin-list-card:hover {
-          transform: translateY(-5px);
-          -webkit-transform: translateY(-5px);
-          box-shadow:
-            0 28px 75px rgba(15, 23, 42, 0.14),
-            0 10px 24px rgba(59,130,246,0.07);
-          -webkit-box-shadow:
-            0 28px 75px rgba(15, 23, 42, 0.14),
-            0 10px 24px rgba(59,130,246,0.07);
         }
 
         .admin-list-title {
@@ -527,15 +636,6 @@ function AdminInternships() {
           }
         }
 
-        @-webkit-keyframes adminFloat {
-          0%, 100% {
-            -webkit-transform: translateY(0px) translateX(0px);
-          }
-          50% {
-            -webkit-transform: translateY(-18px) translateX(10px);
-          }
-        }
-
         @media (max-width: 991px) {
           .admin-hero-title {
             font-size: 1.95rem;
@@ -563,9 +663,8 @@ function AdminInternships() {
               style={{
                 position: "fixed",
                 top: "96px",
-                zIndex: 99999,
                 right: "24px",
-                zIndex: 9999,
+                zIndex: 99999,
                 minWidth: "280px",
                 maxWidth: "380px",
               }}
@@ -584,8 +683,9 @@ function AdminInternships() {
                 }}
               >
                 <div
-                  className={`fw-bold mb-1 ${toast.type === "success" ? "text-success" : "text-danger"
-                    }`}
+                  className={`fw-bold mb-1 ${
+                    toast.type === "success" ? "text-success" : "text-danger"
+                  }`}
                 >
                   {toast.type === "success" ? "Success" : "Error"}
                 </div>
@@ -594,7 +694,6 @@ function AdminInternships() {
             </div>
           )}
 
-          {/* HERO */}
           <div className="card admin-hero border-0 rounded-5 mb-4">
             <div className="card-body p-4 p-md-5">
               <div className="row g-4 align-items-center">
@@ -603,8 +702,8 @@ function AdminInternships() {
                   <h1 className="admin-hero-title">Admin Internship Manager</h1>
                   <p className="admin-hero-text">
                     Create, edit, organize, and manage internship programs,
-                    modules, durations, and quiz questions from one premium
-                    admin workspace.
+                    pricing, course modules, videos, and quiz questions from one
+                    premium admin workspace.
                   </p>
                 </div>
 
@@ -636,15 +735,14 @@ function AdminInternships() {
             </div>
           </div>
 
-          {/* FORM */}
           <div className="card admin-glass-card border-0 rounded-5 overflow-hidden mb-4">
             <div className="card-body p-4 p-md-5">
               <h3 className="admin-section-title">
                 {editingId ? "Edit Program" : "Create Program"}
               </h3>
               <p className="admin-section-subtitle">
-                Fill in the details below to build a complete training
-                experience with durations, modules, and quiz questions.
+                Build a complete program with pricing, course content, unlock
+                schedule, and mini test structure.
               </p>
 
               <form onSubmit={handleSubmit}>
@@ -658,6 +756,17 @@ function AdminInternships() {
                       value={formData.title}
                       onChange={handleBasicChange}
                       required
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="admin-label">Slug</label>
+                    <input
+                      type="text"
+                      className="form-control admin-input"
+                      name="slug"
+                      value={formData.slug}
+                      onChange={handleBasicChange}
                     />
                   </div>
 
@@ -685,13 +794,24 @@ function AdminInternships() {
                     />
                   </div>
 
-                  <div className="col-md-12">
+                  <div className="col-md-3">
                     <label className="admin-label">Thumbnail URL</label>
                     <input
                       type="text"
                       className="form-control admin-input"
                       name="thumbnail"
                       value={formData.thumbnail}
+                      onChange={handleBasicChange}
+                    />
+                  </div>
+
+                  <div className="col-md-3">
+                    <label className="admin-label">Image URL</label>
+                    <input
+                      type="text"
+                      className="form-control admin-input"
+                      name="image"
+                      value={formData.image}
                       onChange={handleBasicChange}
                     />
                   </div>
@@ -710,40 +830,159 @@ function AdminInternships() {
                 </div>
 
                 <div className="admin-sub-card mb-4">
-                  <h5 className="admin-mini-title">Durations</h5>
+                  <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                    <h5 className="admin-mini-title mb-0">Durations & Pricing</h5>
+                    <button
+                      type="button"
+                      className="btn btn-outline-dark admin-action-btn"
+                      onClick={addDuration}
+                    >
+                      Add Duration
+                    </button>
+                  </div>
+
+                  {formData.durations.map((duration, index) => (
+                    <div className="row g-3 mb-3" key={index}>
+                      <div className="col-md-4">
+                        <input
+                          type="text"
+                          className="form-control admin-input"
+                          value={duration.label}
+                          onChange={(e) =>
+                            handleDurationChange(index, "label", e.target.value)
+                          }
+                          placeholder="Duration Label"
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <input
+                          type="number"
+                          className="form-control admin-input"
+                          value={duration.price}
+                          onChange={(e) =>
+                            handleDurationChange(index, "price", e.target.value)
+                          }
+                          placeholder="Price"
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <input
+                          type="number"
+                          className="form-control admin-input"
+                          value={duration.durationDays}
+                          onChange={(e) =>
+                            handleDurationChange(
+                              index,
+                              "durationDays",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Duration Days"
+                        />
+                      </div>
+                      <div className="col-md-2 d-flex">
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger w-100 admin-action-btn"
+                          onClick={() => removeDuration(index)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="admin-sub-card mb-4">
+                  <h5 className="admin-mini-title">Course Rules</h5>
                   <div className="row g-3">
-                    {formData.durations.map((duration, index) => (
-                      <React.Fragment key={index}>
-                        <div className="col-md-6">
-                          <input
-                            type="text"
-                            className="form-control admin-input"
-                            value={duration.label}
-                            onChange={(e) =>
-                              handleDurationChange(index, "label", e.target.value)
-                            }
-                            placeholder="Duration Label"
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <input
-                            type="number"
-                            className="form-control admin-input"
-                            value={duration.price}
-                            onChange={(e) =>
-                              handleDurationChange(index, "price", e.target.value)
-                            }
-                            placeholder="Price"
-                          />
-                        </div>
-                      </React.Fragment>
-                    ))}
+                    <div className="col-md-3">
+                      <label className="admin-label">Required Progress %</label>
+                      <input
+                        type="number"
+                        className="form-control admin-input"
+                        name="requiredProgress"
+                        value={formData.requiredProgress}
+                        onChange={handleBasicChange}
+                      />
+                    </div>
+
+                    <div className="col-md-3">
+                      <label className="admin-label">Mini Test Unlock %</label>
+                      <input
+                        type="number"
+                        className="form-control admin-input"
+                        name="miniTestUnlockProgress"
+                        value={formData.miniTestUnlockProgress}
+                        onChange={handleBasicChange}
+                      />
+                    </div>
+
+                    <div className="col-md-3">
+                      <label className="admin-label">Mini Test Pass %</label>
+                      <input
+                        type="number"
+                        className="form-control admin-input"
+                        name="miniTestPassMarks"
+                        value={formData.miniTestPassMarks}
+                        onChange={handleBasicChange}
+                      />
+                    </div>
+
+                    <div className="col-md-3">
+                      <label className="admin-label">Unlock All Price</label>
+                      <input
+                        type="number"
+                        className="form-control admin-input"
+                        name="unlockAllPrice"
+                        value={formData.unlockAllPrice}
+                        onChange={handleBasicChange}
+                      />
+                    </div>
+
+                    <div className="col-md-6">
+                      <div className="form-check mt-3">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="certificateEnabled"
+                          name="certificateEnabled"
+                          checked={formData.certificateEnabled}
+                          onChange={handleBasicChange}
+                        />
+                        <label
+                          className="form-check-label fw-semibold"
+                          htmlFor="certificateEnabled"
+                        >
+                          Certificate Enabled
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="col-md-6">
+                      <div className="form-check mt-3">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="isActive"
+                          name="isActive"
+                          checked={formData.isActive}
+                          onChange={handleBasicChange}
+                        />
+                        <label
+                          className="form-check-label fw-semibold"
+                          htmlFor="isActive"
+                        >
+                          Program Active
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <div className="admin-sub-card mb-4">
                   <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-                    <h5 className="admin-mini-title mb-0">Modules</h5>
+                    <h5 className="admin-mini-title mb-0">Modules & Videos</h5>
                     <button
                       type="button"
                       className="btn btn-outline-dark admin-action-btn"
@@ -754,29 +993,178 @@ function AdminInternships() {
                   </div>
 
                   {formData.modules.map((module, index) => (
-                    <div className="row g-3 mb-3" key={index}>
-                      <div className="col-md-6">
-                        <input
-                          type="text"
-                          className="form-control admin-input"
-                          placeholder={`Module ${index + 1} Title`}
-                          value={module.title}
-                          onChange={(e) =>
-                            handleModuleChange(index, "title", e.target.value)
-                          }
-                        />
+                    <div className="admin-sub-card mb-4" key={index}>
+                      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                        <h6 className="fw-bold mb-0">Module {index + 1}</h6>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger admin-action-btn"
+                          onClick={() => removeModule(index)}
+                        >
+                          Remove Module
+                        </button>
                       </div>
-                      <div className="col-md-6">
-                        <input
-                          type="text"
-                          className="form-control admin-input"
-                          placeholder={`Module ${index + 1} Description`}
-                          value={module.description}
-                          onChange={(e) =>
-                            handleModuleChange(index, "description", e.target.value)
-                          }
-                        />
+
+                      <div className="row g-3 mb-3">
+                        <div className="col-md-4">
+                          <input
+                            type="text"
+                            className="form-control admin-input"
+                            placeholder="Module Title"
+                            value={module.title}
+                            onChange={(e) =>
+                              handleModuleChange(index, "title", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="col-md-4">
+                          <input
+                            type="text"
+                            className="form-control admin-input"
+                            placeholder="Module Description"
+                            value={module.description}
+                            onChange={(e) =>
+                              handleModuleChange(
+                                index,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="col-md-2">
+                          <input
+                            type="number"
+                            className="form-control admin-input"
+                            placeholder="Unlock Day"
+                            value={module.unlockDay}
+                            onChange={(e) =>
+                              handleModuleChange(
+                                index,
+                                "unlockDay",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="col-md-2">
+                          <input
+                            type="number"
+                            className="form-control admin-input"
+                            placeholder="Order"
+                            value={module.order}
+                            onChange={(e) =>
+                              handleModuleChange(index, "order", e.target.value)
+                            }
+                          />
+                        </div>
                       </div>
+
+                      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                        <h6 className="fw-bold mb-0">Videos</h6>
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary admin-action-btn"
+                          onClick={() => addVideo(index)}
+                        >
+                          Add Video
+                        </button>
+                      </div>
+
+                      {(module.videos || []).map((video, videoIndex) => (
+                        <div className="row g-3 mb-3" key={videoIndex}>
+                          <div className="col-md-3">
+                            <input
+                              type="text"
+                              className="form-control admin-input"
+                              placeholder="Video Title"
+                              value={video.title}
+                              onChange={(e) =>
+                                handleVideoChange(
+                                  index,
+                                  videoIndex,
+                                  "title",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="col-md-3">
+                            <input
+                              type="text"
+                              className="form-control admin-input"
+                              placeholder="Video URL"
+                              value={video.videoUrl}
+                              onChange={(e) =>
+                                handleVideoChange(
+                                  index,
+                                  videoIndex,
+                                  "videoUrl",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="col-md-2">
+                            <input
+                              type="text"
+                              className="form-control admin-input"
+                              placeholder="Duration"
+                              value={video.duration}
+                              onChange={(e) =>
+                                handleVideoChange(
+                                  index,
+                                  videoIndex,
+                                  "duration",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="col-md-2">
+                            <input
+                              type="number"
+                              className="form-control admin-input"
+                              placeholder="Order"
+                              value={video.order}
+                              onChange={(e) =>
+                                handleVideoChange(
+                                  index,
+                                  videoIndex,
+                                  "order",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="col-md-2 d-flex">
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger w-100 admin-action-btn"
+                              onClick={() => removeVideo(index, videoIndex)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          <div className="col-md-12">
+                            <input
+                              type="text"
+                              className="form-control admin-input"
+                              placeholder="Video Description"
+                              value={video.description}
+                              onChange={(e) =>
+                                handleVideoChange(
+                                  index,
+                                  videoIndex,
+                                  "description",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -795,10 +1183,19 @@ function AdminInternships() {
 
                   {formData.quiz.map((q, qIndex) => (
                     <div className="admin-sub-card mb-3" key={qIndex}>
+                      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                        <h6 className="fw-bold mb-0">Question {qIndex + 1}</h6>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger admin-action-btn"
+                          onClick={() => removeQuizQuestion(qIndex)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+
                       <div className="mb-3">
-                        <label className="admin-label">
-                          Question {qIndex + 1}
-                        </label>
+                        <label className="admin-label">Question</label>
                         <input
                           type="text"
                           className="form-control admin-input"
@@ -818,7 +1215,11 @@ function AdminInternships() {
                               placeholder={`Option ${oIndex + 1}`}
                               value={option}
                               onChange={(e) =>
-                                handleQuizOptionChange(qIndex, oIndex, e.target.value)
+                                handleQuizOptionChange(
+                                  qIndex,
+                                  oIndex,
+                                  e.target.value
+                                )
                               }
                             />
                           </div>
@@ -857,8 +1258,8 @@ function AdminInternships() {
                     {loading
                       ? "Saving..."
                       : editingId
-                        ? "Update Internship"
-                        : "Create Internship"}
+                      ? "Update Internship"
+                      : "Create Internship"}
                   </button>
 
                   <button
@@ -873,13 +1274,11 @@ function AdminInternships() {
             </div>
           </div>
 
-          {/* EXISTING INTERNSHIPS */}
           <div className="card admin-glass-card border-0 rounded-5 overflow-hidden">
             <div className="card-body p-4 p-md-5">
               <h3 className="admin-section-title">Existing Internships</h3>
               <p className="admin-section-subtitle">
-                Review, edit, or remove existing internship programs from your
-                admin inventory.
+                Review, edit, or remove existing programs from your admin inventory.
               </p>
 
               <div className="row g-4">
@@ -893,6 +1292,15 @@ function AdminInternships() {
                         </p>
                         <p className="mb-1">
                           <strong>Category:</strong> {item.category}
+                        </p>
+                        <p className="mb-1">
+                          <strong>Durations:</strong> {item.durations?.length || 0}
+                        </p>
+                        <p className="mb-1">
+                          <strong>Modules:</strong> {item.modules?.length || 0}
+                        </p>
+                        <p className="mb-1">
+                          <strong>Quiz Questions:</strong> {item.quiz?.length || 0}
                         </p>
                         <p className="admin-list-text mb-3">
                           {item.description?.slice(0, 120)}...
