@@ -29,6 +29,20 @@ const makeQuizQuestion = () => ({
   correctAnswer: 0,
 });
 
+const reOrderList = (items = [], extraMapper) => {
+  return items.map((item, index) => {
+    const nextItem = { ...item, order: index + 1 };
+    return extraMapper ? extraMapper(nextItem, index) : nextItem;
+  });
+};
+
+const moveItem = (list, fromIndex, toIndex) => {
+  const updated = [...list];
+  const [moved] = updated.splice(fromIndex, 1);
+  updated.splice(toIndex, 0, moved);
+  return updated;
+};
+
 const initialForm = {
   title: "",
   slug: "",
@@ -44,9 +58,9 @@ const initialForm = {
   certificateEnabled: true,
   isActive: true,
   durations: [
-    { label: "1 Month", price: 1, durationDays: 30 },
-    { label: "3 Months", price: 990, durationDays: 90 },
-    { label: "6 Months", price: 1490, durationDays: 180 },
+    { label: "1 Month", price: 1, durationDays: 30, order: 1 },
+    { label: "3 Months", price: 990, durationDays: 90, order: 2 },
+    { label: "6 Months", price: 1490, durationDays: 180, order: 3 },
   ],
   modules: [makeModule()],
   quiz: [makeQuizQuestion()],
@@ -110,21 +124,50 @@ function AdminInternships() {
       field === "price" || field === "durationDays" || field === "order"
         ? Number(value)
         : value;
-    setFormData((prev) => ({ ...prev, durations: updated }));
+
+    setFormData((prev) => ({
+      ...prev,
+      durations: updated,
+    }));
   };
 
   const addDuration = () => {
     setFormData((prev) => ({
       ...prev,
-      durations: [...prev.durations, makeDuration()],
+      durations: [
+        ...prev.durations,
+        {
+          ...makeDuration(),
+          order: prev.durations.length + 1,
+        },
+      ],
     }));
   };
 
   const removeDuration = (index) => {
     if (formData.durations.length === 1) return;
+
     setFormData((prev) => ({
       ...prev,
-      durations: prev.durations.filter((_, i) => i !== index),
+      durations: reOrderList(prev.durations.filter((_, i) => i !== index)),
+    }));
+  };
+
+  const moveDurationUp = (index) => {
+    if (index === 0) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      durations: reOrderList(moveItem(prev.durations, index, index - 1)),
+    }));
+  };
+
+  const moveDurationDown = (index) => {
+    if (index === formData.durations.length - 1) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      durations: reOrderList(moveItem(prev.durations, index, index + 1)),
     }));
   };
 
@@ -132,28 +175,66 @@ function AdminInternships() {
     const updated = [...formData.modules];
     updated[index][field] =
       field === "unlockDay" || field === "order" ? Number(value) : value;
+
     setFormData((prev) => ({ ...prev, modules: updated }));
   };
 
   const addModule = () => {
     setFormData((prev) => ({
       ...prev,
-      modules: [
+      modules: reOrderList([
         ...prev.modules,
         {
           ...makeModule(),
           order: prev.modules.length + 1,
           unlockDay: prev.modules.length + 1,
         },
-      ],
+      ]),
     }));
   };
 
   const removeModule = (index) => {
     if (formData.modules.length === 1) return;
+
     setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.filter((_, i) => i !== index),
+      modules: reOrderList(
+        prev.modules.filter((_, i) => i !== index),
+        (module) => ({
+          ...module,
+          videos: reOrderList(module.videos || []),
+        })
+      ),
+    }));
+  };
+
+  const moveModuleUp = (index) => {
+    if (index === 0) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      modules: reOrderList(
+        moveItem(prev.modules, index, index - 1),
+        (module) => ({
+          ...module,
+          videos: reOrderList(module.videos || []),
+        })
+      ),
+    }));
+  };
+
+  const moveModuleDown = (index) => {
+    if (index === formData.modules.length - 1) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      modules: reOrderList(
+        moveItem(prev.modules, index, index + 1),
+        (module) => ({
+          ...module,
+          videos: reOrderList(module.videos || []),
+        })
+      ),
     }));
   };
 
@@ -167,10 +248,13 @@ function AdminInternships() {
 
   const addVideo = (moduleIndex) => {
     const updated = [...formData.modules];
-    updated[moduleIndex].videos.push({
-      ...makeVideo(),
-      order: updated[moduleIndex].videos.length + 1,
-    });
+    updated[moduleIndex].videos = reOrderList([
+      ...updated[moduleIndex].videos,
+      {
+        ...makeVideo(),
+        order: updated[moduleIndex].videos.length + 1,
+      },
+    ]);
 
     setFormData((prev) => ({ ...prev, modules: updated }));
   };
@@ -178,8 +262,31 @@ function AdminInternships() {
   const removeVideo = (moduleIndex, videoIndex) => {
     const updated = [...formData.modules];
     if (updated[moduleIndex].videos.length === 1) return;
-    updated[moduleIndex].videos = updated[moduleIndex].videos.filter(
-      (_, i) => i !== videoIndex
+
+    updated[moduleIndex].videos = reOrderList(
+      updated[moduleIndex].videos.filter((_, i) => i !== videoIndex)
+    );
+
+    setFormData((prev) => ({ ...prev, modules: updated }));
+  };
+
+  const moveVideoUp = (moduleIndex, videoIndex) => {
+    if (videoIndex === 0) return;
+
+    const updated = [...formData.modules];
+    updated[moduleIndex].videos = reOrderList(
+      moveItem(updated[moduleIndex].videos, videoIndex, videoIndex - 1)
+    );
+
+    setFormData((prev) => ({ ...prev, modules: updated }));
+  };
+
+  const moveVideoDown = (moduleIndex, videoIndex) => {
+    const updated = [...formData.modules];
+    if (videoIndex === updated[moduleIndex].videos.length - 1) return;
+
+    updated[moduleIndex].videos = reOrderList(
+      moveItem(updated[moduleIndex].videos, videoIndex, videoIndex + 1)
     );
 
     setFormData((prev) => ({ ...prev, modules: updated }));
@@ -213,6 +320,24 @@ function AdminInternships() {
     }));
   };
 
+  const moveQuizUp = (qIndex) => {
+    if (qIndex === 0) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      quiz: moveItem(prev.quiz, qIndex, qIndex - 1),
+    }));
+  };
+
+  const moveQuizDown = (qIndex) => {
+    if (qIndex === formData.quiz.length - 1) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      quiz: moveItem(prev.quiz, qIndex, qIndex + 1),
+    }));
+  };
+
   const resetForm = () => {
     setFormData(initialForm);
     setEditingId(null);
@@ -235,7 +360,7 @@ function AdminInternships() {
       certificateEnabled: !!formData.certificateEnabled,
       isActive: !!formData.isActive,
 
-      durations: formData.durations
+      durations: reOrderList(formData.durations)
         .filter((d) => d.label.trim())
         .map((d, index) => ({
           label: d.label.trim(),
@@ -244,21 +369,21 @@ function AdminInternships() {
           order: index + 1,
         })),
 
-      modules: formData.modules
+      modules: reOrderList(formData.modules)
         .filter((m) => m.title.trim())
         .map((m, index) => ({
           title: m.title.trim(),
           description: m.description.trim(),
           unlockDay: Number(m.unlockDay || index + 1),
-          order: Number(m.order || index + 1),
-          videos: (m.videos || [])
+          order: index + 1,
+          videos: reOrderList(m.videos || [])
             .filter((v) => v.title.trim() && v.videoUrl.trim())
             .map((v, vIndex) => ({
               title: v.title.trim(),
               description: v.description.trim(),
               videoUrl: v.videoUrl.trim(),
               duration: v.duration.trim(),
-              order: Number(v.order || vIndex + 1),
+              order: vIndex + 1,
             })),
         })),
 
@@ -341,29 +466,39 @@ function AdminInternships() {
         isActive:
           typeof internship.isActive === "boolean" ? internship.isActive : true,
         durations: internship.durations?.length
-          ? internship.durations.map((d) => ({
-              label: d.label || "",
-              price: d.price || 0,
-              durationDays: d.durationDays || 30,
-              order: d.order || 1,
-            }))
+          ? reOrderList(
+              internship.durations.map((d) => ({
+                label: d.label || "",
+                price: d.price || 0,
+                durationDays: d.durationDays || 30,
+                order: d.order || 1,
+              }))
+            )
           : initialForm.durations,
         modules: internship.modules?.length
-          ? internship.modules.map((m, index) => ({
-              title: m.title || "",
-              description: m.description || "",
-              unlockDay: m.unlockDay || index + 1,
-              order: m.order || index + 1,
-              videos: m.videos?.length
-                ? m.videos.map((v, vIndex) => ({
-                    title: v.title || "",
-                    description: v.description || "",
-                    videoUrl: v.videoUrl || "",
-                    duration: v.duration || "",
-                    order: v.order || vIndex + 1,
-                  }))
-                : [makeVideo()],
-            }))
+          ? reOrderList(
+              internship.modules.map((m, index) => ({
+                title: m.title || "",
+                description: m.description || "",
+                unlockDay: m.unlockDay || index + 1,
+                order: m.order || index + 1,
+                videos: m.videos?.length
+                  ? reOrderList(
+                      m.videos.map((v, vIndex) => ({
+                        title: v.title || "",
+                        description: v.description || "",
+                        videoUrl: v.videoUrl || "",
+                        duration: v.duration || "",
+                        order: v.order || vIndex + 1,
+                      }))
+                    )
+                  : [makeVideo()],
+              })),
+              (module) => ({
+                ...module,
+                videos: reOrderList(module.videos || []),
+              })
+            )
           : [makeModule()],
         quiz: internship.quiz?.length
           ? internship.quiz.map((q) => ({
@@ -580,8 +715,8 @@ function AdminInternships() {
         }
 
         .admin-action-btn {
-          min-height: 48px;
-          border-radius: 16px;
+          min-height: 44px;
+          border-radius: 14px;
           font-weight: 800;
         }
 
@@ -593,6 +728,12 @@ function AdminInternships() {
 
         .admin-primary-btn:hover {
           color: #fff;
+        }
+
+        .admin-inline-actions {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
         }
 
         .admin-list-card {
@@ -702,8 +843,8 @@ function AdminInternships() {
                   <h1 className="admin-hero-title">Admin Internship Manager</h1>
                   <p className="admin-hero-text">
                     Create, edit, organize, and manage internship programs,
-                    pricing, course modules, videos, and quiz questions from one
-                    premium admin workspace.
+                    pricing, modules, videos, and quiz order from one premium
+                    admin workspace.
                   </p>
                 </div>
 
@@ -726,7 +867,7 @@ function AdminInternships() {
                     <div className="col-12">
                       <div className="admin-stat-card">
                         <div className="admin-stat-label">Workspace</div>
-                        <h4 className="admin-stat-value">Premium Admin</h4>
+                        <h4 className="admin-stat-value">Reorder Ready</h4>
                       </div>
                     </div>
                   </div>
@@ -843,7 +984,7 @@ function AdminInternships() {
 
                   {formData.durations.map((duration, index) => (
                     <div className="row g-3 mb-3" key={index}>
-                      <div className="col-md-4">
+                      <div className="col-md-3">
                         <input
                           type="text"
                           className="form-control admin-input"
@@ -854,7 +995,7 @@ function AdminInternships() {
                           placeholder="Duration Label"
                         />
                       </div>
-                      <div className="col-md-3">
+                      <div className="col-md-2">
                         <input
                           type="number"
                           className="form-control admin-input"
@@ -865,7 +1006,7 @@ function AdminInternships() {
                           placeholder="Price"
                         />
                       </div>
-                      <div className="col-md-3">
+                      <div className="col-md-2">
                         <input
                           type="number"
                           className="form-control admin-input"
@@ -877,17 +1018,33 @@ function AdminInternships() {
                               e.target.value
                             )
                           }
-                          placeholder="Duration Days"
+                          placeholder="Days"
                         />
                       </div>
-                      <div className="col-md-2 d-flex">
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger w-100 admin-action-btn"
-                          onClick={() => removeDuration(index)}
-                        >
-                          Remove
-                        </button>
+                      <div className="col-md-5">
+                        <div className="admin-inline-actions">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary admin-action-btn"
+                            onClick={() => moveDurationUp(index)}
+                          >
+                            ↑ Up
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary admin-action-btn"
+                            onClick={() => moveDurationDown(index)}
+                          >
+                            ↓ Down
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger admin-action-btn"
+                            onClick={() => removeDuration(index)}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -996,13 +1153,29 @@ function AdminInternships() {
                     <div className="admin-sub-card mb-4" key={index}>
                       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
                         <h6 className="fw-bold mb-0">Module {index + 1}</h6>
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger admin-action-btn"
-                          onClick={() => removeModule(index)}
-                        >
-                          Remove Module
-                        </button>
+                        <div className="admin-inline-actions">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary admin-action-btn"
+                            onClick={() => moveModuleUp(index)}
+                          >
+                            ↑ Up
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary admin-action-btn"
+                            onClick={() => moveModuleDown(index)}
+                          >
+                            ↓ Down
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger admin-action-btn"
+                            onClick={() => removeModule(index)}
+                          >
+                            Remove Module
+                          </button>
+                        </div>
                       </div>
 
                       <div className="row g-3 mb-3">
@@ -1137,14 +1310,30 @@ function AdminInternships() {
                               }
                             />
                           </div>
-                          <div className="col-md-2 d-flex">
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger w-100 admin-action-btn"
-                              onClick={() => removeVideo(index, videoIndex)}
-                            >
-                              Remove
-                            </button>
+                          <div className="col-md-2">
+                            <div className="admin-inline-actions">
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary admin-action-btn"
+                                onClick={() => moveVideoUp(index, videoIndex)}
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary admin-action-btn"
+                                onClick={() => moveVideoDown(index, videoIndex)}
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger admin-action-btn"
+                                onClick={() => removeVideo(index, videoIndex)}
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
 
                           <div className="col-md-12">
@@ -1185,13 +1374,29 @@ function AdminInternships() {
                     <div className="admin-sub-card mb-3" key={qIndex}>
                       <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
                         <h6 className="fw-bold mb-0">Question {qIndex + 1}</h6>
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger admin-action-btn"
-                          onClick={() => removeQuizQuestion(qIndex)}
-                        >
-                          Remove
-                        </button>
+                        <div className="admin-inline-actions">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary admin-action-btn"
+                            onClick={() => moveQuizUp(qIndex)}
+                          >
+                            ↑ Up
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary admin-action-btn"
+                            onClick={() => moveQuizDown(qIndex)}
+                          >
+                            ↓ Down
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger admin-action-btn"
+                            onClick={() => removeQuizQuestion(qIndex)}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
 
                       <div className="mb-3">
