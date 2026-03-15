@@ -44,12 +44,20 @@ function AdminDashboard() {
   const [userRoleFilter, setUserRoleFilter] = useState("All");
   const [userDateFrom, setUserDateFrom] = useState("");
   const [userDateTo, setUserDateTo] = useState("");
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersLimit] = useState(10);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [usersTotal, setUsersTotal] = useState(0);
 
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("All");
   const [certificateFilter, setCertificateFilter] = useState("All");
   const [purchaseDateFrom, setPurchaseDateFrom] = useState("");
   const [purchaseDateTo, setPurchaseDateTo] = useState("");
+  const [purchasesPage, setPurchasesPage] = useState(1);
+  const [purchasesLimit] = useState(10);
+  const [purchasesTotalPages, setPurchasesTotalPages] = useState(1);
+  const [purchasesTotal, setPurchasesTotal] = useState(0);
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -69,94 +77,77 @@ function AdminDashboard() {
     }, 3000);
   };
 
-  const fetchStats = async () => {
+  const fetchOverview = async () => {
+    const { data } = await API.get("/admin/overview");
+    setStats(data.stats || {});
+    setRecentInternships(data.recentInternships || []);
+  };
+
+  const fetchUsers = async () => {
+    const { data } = await API.get("/admin/users", {
+      params: {
+        page: usersPage,
+        limit: usersLimit,
+        search: userSearch,
+        role: userRoleFilter,
+        from: userDateFrom,
+        to: userDateTo,
+      },
+    });
+
+    setRecentUsers(data.items || []);
+    setUsersTotalPages(data.totalPages || 1);
+    setUsersTotal(data.total || 0);
+  };
+
+  const fetchPurchases = async () => {
+    const { data } = await API.get("/admin/purchases", {
+      params: {
+        page: purchasesPage,
+        limit: purchasesLimit,
+        search: purchaseSearch,
+        paymentStatus: paymentFilter,
+        certificateStatus: certificateFilter,
+        from: purchaseDateFrom,
+        to: purchaseDateTo,
+      },
+    });
+
+    setRecentPurchases(data.items || []);
+    setPurchasesTotalPages(data.totalPages || 1);
+    setPurchasesTotal(data.total || 0);
+  };
+
+  const fetchAll = async () => {
     try {
-      const { data } = await API.get("/internships/admin/stats");
-      setStats(data.stats || {});
-      setRecentInternships(data.recentInternships || []);
-      setRecentUsers(data.recentUsers || []);
-      setRecentPurchases(data.recentPurchases || []);
+      setLoading(true);
+      await Promise.all([fetchOverview(), fetchUsers(), fetchPurchases()]);
     } catch (error) {
-      console.error("Failed to fetch admin stats:", error);
-      showToast("error", "Failed to fetch admin dashboard stats");
+      console.error("Failed to fetch admin dashboard data:", error);
+      showToast("error", "Failed to fetch admin dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchAll();
   }, []);
 
-  const isWithinDateRange = (value, fromDate, toDate) => {
-    if (!value) return false;
-    const itemDate = new Date(value);
-    if (Number.isNaN(itemDate.getTime())) return false;
-
-    if (fromDate) {
-      const from = new Date(`${fromDate}T00:00:00`);
-      if (itemDate < from) return false;
-    }
-
-    if (toDate) {
-      const to = new Date(`${toDate}T23:59:59`);
-      if (itemDate > to) return false;
-    }
-
-    return true;
-  };
-
-  const filteredUsers = useMemo(() => {
-    const query = userSearch.trim().toLowerCase();
-
-    return recentUsers.filter((user) => {
-      const matchesSearch =
-        !query ||
-        user.name?.toLowerCase().includes(query) ||
-        user.email?.toLowerCase().includes(query);
-
-      const matchesRole =
-        userRoleFilter === "All" || user.role === userRoleFilter.toLowerCase();
-
-      const matchesDate =
-        (!userDateFrom && !userDateTo) ||
-        isWithinDateRange(user.createdAt, userDateFrom, userDateTo);
-
-      return matchesSearch && matchesRole && matchesDate;
+  useEffect(() => {
+    fetchUsers().catch((error) => {
+      console.error("Users fetch failed:", error);
+      showToast("error", "Failed to fetch users");
     });
-  }, [recentUsers, userSearch, userRoleFilter, userDateFrom, userDateTo]);
+  }, [usersPage, userRoleFilter, userDateFrom, userDateTo]);
 
-  const filteredPurchases = useMemo(() => {
-    const query = purchaseSearch.trim().toLowerCase();
-
-    return recentPurchases.filter((item) => {
-      const matchesSearch =
-        !query ||
-        item.user?.name?.toLowerCase().includes(query) ||
-        item.user?.email?.toLowerCase().includes(query) ||
-        item.internship?.title?.toLowerCase().includes(query) ||
-        item.internship?.branch?.toLowerCase().includes(query) ||
-        item.internship?.category?.toLowerCase().includes(query);
-
-      const matchesPayment =
-        paymentFilter === "All" ||
-        item.paymentStatus === paymentFilter.toLowerCase();
-
-      const hasCertificate = !!item.certificate?.certificateId;
-      const matchesCertificate =
-        certificateFilter === "All" ||
-        (certificateFilter === "Issued" && hasCertificate) ||
-        (certificateFilter === "Not Issued" && !hasCertificate);
-
-      const matchesDate =
-        (!purchaseDateFrom && !purchaseDateTo) ||
-        isWithinDateRange(item.createdAt, purchaseDateFrom, purchaseDateTo);
-
-      return matchesSearch && matchesPayment && matchesCertificate && matchesDate;
+  useEffect(() => {
+    fetchPurchases().catch((error) => {
+      console.error("Purchases fetch failed:", error);
+      showToast("error", "Failed to fetch purchases");
     });
   }, [
-    recentPurchases,
-    purchaseSearch,
+    purchasesPage,
     paymentFilter,
     certificateFilter,
     purchaseDateFrom,
@@ -272,7 +263,7 @@ function AdminDashboard() {
         "Purchases Count",
         "Certificates Count",
       ],
-      ...filteredUsers.map((user) => [
+      ...recentUsers.map((user) => [
         user.name || "",
         user.email || "",
         user.role || "",
@@ -306,7 +297,7 @@ function AdminDashboard() {
         "Certificate Issued",
         "Certificate ID",
       ],
-      ...filteredPurchases.map((item) => [
+      ...recentPurchases.map((item) => [
         item.user?.name || "",
         item.user?.email || "",
         item.internship?.title || "",
@@ -326,6 +317,53 @@ function AdminDashboard() {
     ];
 
     downloadCsv(rows, "internova_purchases_export.csv");
+  };
+
+  const handleUserSearch = async () => {
+    try {
+      setUsersPage(1);
+      const { data } = await API.get("/admin/users", {
+        params: {
+          page: 1,
+          limit: usersLimit,
+          search: userSearch,
+          role: userRoleFilter,
+          from: userDateFrom,
+          to: userDateTo,
+        },
+      });
+
+      setRecentUsers(data.items || []);
+      setUsersTotalPages(data.totalPages || 1);
+      setUsersTotal(data.total || 0);
+    } catch (error) {
+      console.error("User search failed:", error);
+      showToast("error", "Failed to search users");
+    }
+  };
+
+  const handlePurchaseSearch = async () => {
+    try {
+      setPurchasesPage(1);
+      const { data } = await API.get("/admin/purchases", {
+        params: {
+          page: 1,
+          limit: purchasesLimit,
+          search: purchaseSearch,
+          paymentStatus: paymentFilter,
+          certificateStatus: certificateFilter,
+          from: purchaseDateFrom,
+          to: purchaseDateTo,
+        },
+      });
+
+      setRecentPurchases(data.items || []);
+      setPurchasesTotalPages(data.totalPages || 1);
+      setPurchasesTotal(data.total || 0);
+    } catch (error) {
+      console.error("Purchase search failed:", error);
+      showToast("error", "Failed to search purchases");
+    }
   };
 
   const getProgramStatusBadge = (isActive) =>
@@ -629,7 +667,7 @@ function AdminDashboard() {
         }
         .admin-filter-grid {
           display: grid;
-          grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
           gap: 14px;
           margin-bottom: 22px;
         }
@@ -672,6 +710,14 @@ function AdminDashboard() {
           background: #fff;
           padding: 18px;
           height: 100%;
+        }
+        .admin-pagination {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+          margin-top: 18px;
         }
         @keyframes adminDashboardFloat {
           0%, 100% { transform: translateY(0px) translateX(0px); }
@@ -880,18 +926,17 @@ function AdminDashboard() {
           <div className="admin-section-card p-4 p-md-5 mb-4">
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
-                <h3 className="admin-section-title">Recent Users</h3>
+                <h3 className="admin-section-title">Users Management</h3>
                 <p className="admin-section-subtitle">
-                  Search, filter, and export latest registered users with login and purchase insights.
+                  Server-side filtered and paginated users list.
                 </p>
               </div>
-
               <button
                 className="btn btn-outline-primary admin-action-btn"
                 type="button"
                 onClick={exportUsersCsv}
               >
-                Export Users CSV
+                Export Current Page CSV
               </button>
             </div>
 
@@ -903,31 +948,43 @@ function AdminDashboard() {
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
               />
-
               <select
                 className="form-select admin-select"
                 value={userRoleFilter}
-                onChange={(e) => setUserRoleFilter(e.target.value)}
+                onChange={(e) => {
+                  setUsersPage(1);
+                  setUserRoleFilter(e.target.value);
+                }}
               >
                 <option value="All">All Roles</option>
                 <option value="Admin">Admin</option>
                 <option value="User">User</option>
               </select>
-
               <input
                 type="date"
                 className="form-control admin-input"
                 value={userDateFrom}
-                onChange={(e) => setUserDateFrom(e.target.value)}
+                onChange={(e) => {
+                  setUsersPage(1);
+                  setUserDateFrom(e.target.value);
+                }}
               />
-
               <input
                 type="date"
                 className="form-control admin-input"
                 value={userDateTo}
-                onChange={(e) => setUserDateTo(e.target.value)}
+                onChange={(e) => {
+                  setUsersPage(1);
+                  setUserDateTo(e.target.value);
+                }}
               />
-
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={handleUserSearch}
+              >
+                Search
+              </button>
               <button
                 className="btn btn-outline-dark admin-action-btn"
                 type="button"
@@ -936,10 +993,16 @@ function AdminDashboard() {
                   setUserRoleFilter("All");
                   setUserDateFrom("");
                   setUserDateTo("");
+                  setUsersPage(1);
+                  fetchUsers();
                 }}
               >
-                Reset Filters
+                Reset
               </button>
+            </div>
+
+            <div className="mb-2 text-secondary small">
+              Total Users Found: {usersTotal}
             </div>
 
             <div className="admin-table-wrap">
@@ -957,8 +1020,8 @@ function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
+                  {recentUsers.length > 0 ? (
+                    recentUsers.map((user) => (
                       <tr key={user._id}>
                         <td>
                           <div className="admin-user-name">{user.name || "Unknown User"}</div>
@@ -991,23 +1054,42 @@ function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
+            <div className="admin-pagination">
+              <button
+                className="btn btn-outline-dark"
+                disabled={usersPage <= 1}
+                onClick={() => setUsersPage((prev) => prev - 1)}
+              >
+                Prev
+              </button>
+              <span className="fw-semibold">
+                Page {usersPage} / {usersTotalPages}
+              </span>
+              <button
+                className="btn btn-outline-dark"
+                disabled={usersPage >= usersTotalPages}
+                onClick={() => setUsersPage((prev) => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
           </div>
 
           <div className="admin-section-card p-4 p-md-5">
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
-                <h3 className="admin-section-title">Recent Purchases & Enrollment Insights</h3>
+                <h3 className="admin-section-title">Purchases Management</h3>
                 <p className="admin-section-subtitle">
-                  Search, filter, and export enrollment records with payment, progress, quiz, and certificate info.
+                  Server-side filtered and paginated purchases list.
                 </p>
               </div>
-
               <button
                 className="btn btn-outline-primary admin-action-btn"
                 type="button"
                 onClick={exportPurchasesCsv}
               >
-                Export Purchases CSV
+                Export Current Page CSV
               </button>
             </div>
 
@@ -1019,41 +1101,56 @@ function AdminDashboard() {
                 value={purchaseSearch}
                 onChange={(e) => setPurchaseSearch(e.target.value)}
               />
-
               <select
                 className="form-select admin-select"
                 value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
+                onChange={(e) => {
+                  setPurchasesPage(1);
+                  setPaymentFilter(e.target.value);
+                }}
               >
                 <option value="All">All Payments</option>
                 <option value="Paid">Paid</option>
                 <option value="Failed">Failed</option>
                 <option value="Created">Created</option>
               </select>
-
               <select
                 className="form-select admin-select"
                 value={certificateFilter}
-                onChange={(e) => setCertificateFilter(e.target.value)}
+                onChange={(e) => {
+                  setPurchasesPage(1);
+                  setCertificateFilter(e.target.value);
+                }}
               >
                 <option value="All">All Certificates</option>
                 <option value="Issued">Issued</option>
                 <option value="Not Issued">Not Issued</option>
               </select>
-
               <input
                 type="date"
                 className="form-control admin-input"
                 value={purchaseDateFrom}
-                onChange={(e) => setPurchaseDateFrom(e.target.value)}
+                onChange={(e) => {
+                  setPurchasesPage(1);
+                  setPurchaseDateFrom(e.target.value);
+                }}
               />
-
               <input
                 type="date"
                 className="form-control admin-input"
                 value={purchaseDateTo}
-                onChange={(e) => setPurchaseDateTo(e.target.value)}
+                onChange={(e) => {
+                  setPurchasesPage(1);
+                  setPurchaseDateTo(e.target.value);
+                }}
               />
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={handlePurchaseSearch}
+              >
+                Search
+              </button>
             </div>
 
             <div className="mb-3">
@@ -1066,10 +1163,16 @@ function AdminDashboard() {
                   setCertificateFilter("All");
                   setPurchaseDateFrom("");
                   setPurchaseDateTo("");
+                  setPurchasesPage(1);
+                  fetchPurchases();
                 }}
               >
                 Reset Purchase Filters
               </button>
+            </div>
+
+            <div className="mb-2 text-secondary small">
+              Total Purchases Found: {purchasesTotal}
             </div>
 
             <div className="admin-table-wrap">
@@ -1090,8 +1193,8 @@ function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPurchases.length > 0 ? (
-                    filteredPurchases.map((item) => (
+                  {recentPurchases.length > 0 ? (
+                    recentPurchases.map((item) => (
                       <tr key={item._id}>
                         <td>
                           <div className="admin-user-name">
@@ -1162,6 +1265,26 @@ function AdminDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="admin-pagination">
+              <button
+                className="btn btn-outline-dark"
+                disabled={purchasesPage <= 1}
+                onClick={() => setPurchasesPage((prev) => prev - 1)}
+              >
+                Prev
+              </button>
+              <span className="fw-semibold">
+                Page {purchasesPage} / {purchasesTotalPages}
+              </span>
+              <button
+                className="btn btn-outline-dark"
+                disabled={purchasesPage >= purchasesTotalPages}
+                onClick={() => setPurchasesPage((prev) => prev + 1)}
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
