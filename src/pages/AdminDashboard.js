@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import { Link } from "react-router-dom";
 
@@ -26,6 +26,16 @@ function AdminDashboard() {
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentPurchases, setRecentPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("All");
+
+  const [purchaseSearch, setPurchaseSearch] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("All");
+  const [certificateFilter, setCertificateFilter] = useState("All");
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
 
   const [toast, setToast] = useState({
     show: false,
@@ -59,6 +69,48 @@ function AdminDashboard() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const filteredUsers = useMemo(() => {
+    const query = userSearch.trim().toLowerCase();
+
+    return recentUsers.filter((user) => {
+      const matchesSearch =
+        !query ||
+        user.name?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query);
+
+      const matchesRole =
+        userRoleFilter === "All" || user.role === userRoleFilter.toLowerCase();
+
+      return matchesSearch && matchesRole;
+    });
+  }, [recentUsers, userSearch, userRoleFilter]);
+
+  const filteredPurchases = useMemo(() => {
+    const query = purchaseSearch.trim().toLowerCase();
+
+    return recentPurchases.filter((item) => {
+      const matchesSearch =
+        !query ||
+        item.user?.name?.toLowerCase().includes(query) ||
+        item.user?.email?.toLowerCase().includes(query) ||
+        item.internship?.title?.toLowerCase().includes(query) ||
+        item.internship?.branch?.toLowerCase().includes(query) ||
+        item.internship?.category?.toLowerCase().includes(query);
+
+      const matchesPayment =
+        paymentFilter === "All" ||
+        item.paymentStatus === paymentFilter.toLowerCase();
+
+      const hasCertificate = !!item.certificate?.certificateId;
+      const matchesCertificate =
+        certificateFilter === "All" ||
+        (certificateFilter === "Issued" && hasCertificate) ||
+        (certificateFilter === "Not Issued" && !hasCertificate);
+
+      return matchesSearch && matchesPayment && matchesCertificate;
+    });
+  }, [recentPurchases, purchaseSearch, paymentFilter, certificateFilter]);
 
   const formatDate = (value) => {
     if (!value) return "N/A";
@@ -417,6 +469,63 @@ function AdminDashboard() {
           border: 1px solid #93c5fd;
         }
 
+        .admin-filter-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 14px;
+          margin-bottom: 22px;
+        }
+
+        .admin-filter-grid.purchase-grid {
+          grid-template-columns: 2fr 1fr 1fr;
+        }
+
+        .admin-input,
+        .admin-select {
+          min-height: 52px;
+          border-radius: 16px;
+          border: 1px solid #dbe3f0;
+          background: #f8fafc;
+        }
+
+        .admin-view-btn {
+          min-height: 40px;
+          border-radius: 12px;
+          font-weight: 700;
+        }
+
+        .admin-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.55);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          z-index: 99998;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 18px;
+        }
+
+        .admin-modal-card {
+          width: min(860px, 100%);
+          max-height: 90vh;
+          overflow-y: auto;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+          border: 1px solid #dbeafe;
+          border-radius: 28px;
+          box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+          padding: 24px;
+        }
+
+        .admin-info-box {
+          border: 1px solid #e2e8f0;
+          border-radius: 18px;
+          background: #fff;
+          padding: 18px;
+          height: 100%;
+        }
+
         @keyframes adminDashboardFloat {
           0%, 100% {
             transform: translateY(0px) translateX(0px);
@@ -429,6 +538,11 @@ function AdminDashboard() {
         @media (max-width: 991px) {
           .admin-dashboard-title {
             font-size: 1.95rem;
+          }
+
+          .admin-filter-grid,
+          .admin-filter-grid.purchase-grid {
+            grid-template-columns: 1fr;
           }
         }
 
@@ -519,114 +633,42 @@ function AdminDashboard() {
           </div>
 
           <div className="row g-4 mb-4">
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Total Programs</div>
-                <h3 className="admin-stat-value">{stats.totalPrograms || 0}</h3>
+            {[
+              ["Total Programs", stats.totalPrograms],
+              ["Active Programs", stats.activePrograms],
+              ["Inactive Programs", stats.inactivePrograms],
+              ["Total Users", stats.totalUsers],
+              ["Admins", stats.totalAdmins],
+              ["Normal Users", stats.totalNormalUsers],
+              ["Active Users", stats.activeUsers],
+              ["Recent Logins", stats.recentlyLoggedInUsers],
+              ["Total Purchases", stats.totalPurchases],
+              ["Paid Purchases", stats.paidPurchases],
+              ["Certificates Issued", stats.totalCertificatesIssued],
+              ["Quiz Passed", stats.totalQuizPassed],
+            ].map(([label, value], idx) => (
+              <div className="col-md-6 col-xl-3" key={idx}>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-label">{label}</div>
+                  <h3 className="admin-stat-value">{value || 0}</h3>
+                </div>
               </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Active Programs</div>
-                <h3 className="admin-stat-value">{stats.activePrograms || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Inactive Programs</div>
-                <h3 className="admin-stat-value">{stats.inactivePrograms || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Total Users</div>
-                <h3 className="admin-stat-value">{stats.totalUsers || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Admins</div>
-                <h3 className="admin-stat-value">{stats.totalAdmins || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Normal Users</div>
-                <h3 className="admin-stat-value">{stats.totalNormalUsers || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Active Users</div>
-                <h3 className="admin-stat-value">{stats.activeUsers || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Recent Logins</div>
-                <h3 className="admin-stat-value">{stats.recentlyLoggedInUsers || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Total Purchases</div>
-                <h3 className="admin-stat-value">{stats.totalPurchases || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Paid Purchases</div>
-                <h3 className="admin-stat-value">{stats.paidPurchases || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Certificates Issued</div>
-                <h3 className="admin-stat-value">
-                  {stats.totalCertificatesIssued || 0}
-                </h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Quiz Passed</div>
-                <h3 className="admin-stat-value">{stats.totalQuizPassed || 0}</h3>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="row g-4 mb-4">
-            <div className="col-md-6 col-xl-4">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Total Modules</div>
-                <h3 className="admin-stat-value">{stats.totalModules || 0}</h3>
+            {[
+              ["Total Modules", stats.totalModules],
+              ["Total Videos", stats.totalVideos],
+              ["Total Quiz Questions", stats.totalQuizQuestions],
+            ].map(([label, value], idx) => (
+              <div className="col-md-6 col-xl-4" key={idx}>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-label">{label}</div>
+                  <h3 className="admin-stat-value">{value || 0}</h3>
+                </div>
               </div>
-            </div>
-
-            <div className="col-md-6 col-xl-4">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Total Videos</div>
-                <h3 className="admin-stat-value">{stats.totalVideos || 0}</h3>
-              </div>
-            </div>
-
-            <div className="col-md-6 col-xl-4">
-              <div className="admin-stat-card">
-                <div className="admin-stat-label">Total Quiz Questions</div>
-                <h3 className="admin-stat-value">{stats.totalQuizQuestions || 0}</h3>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="admin-section-card p-4 p-md-5 mb-4">
@@ -691,8 +733,39 @@ function AdminDashboard() {
           <div className="admin-section-card p-4 p-md-5 mb-4">
             <h3 className="admin-section-title">Recent Users</h3>
             <p className="admin-section-subtitle">
-              View latest registered users, their roles, login activity, and purchase counts.
+              Search, filter, and view latest registered users with login and purchase insights.
             </p>
+
+            <div className="admin-filter-grid">
+              <input
+                type="text"
+                className="form-control admin-input"
+                placeholder="Search by user name or email..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
+
+              <select
+                className="form-select admin-select"
+                value={userRoleFilter}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
+              >
+                <option value="All">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="User">User</option>
+              </select>
+
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                type="button"
+                onClick={() => {
+                  setUserSearch("");
+                  setUserRoleFilter("All");
+                }}
+              >
+                Reset Filters
+              </button>
+            </div>
 
             <div className="admin-table-wrap">
               <table className="admin-table">
@@ -705,11 +778,12 @@ function AdminDashboard() {
                     <th>Last Login</th>
                     <th>Purchases</th>
                     <th>Certificates</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentUsers.length > 0 ? (
-                    recentUsers.map((user) => (
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
                       <tr key={user._id}>
                         <td>
                           <div className="admin-user-name">{user.name || "Unknown User"}</div>
@@ -721,11 +795,20 @@ function AdminDashboard() {
                         <td>{formatDateTime(user.lastLoginAt)}</td>
                         <td>{user.purchasesCount || 0}</td>
                         <td>{user.certificatesCount || 0}</td>
+                        <td>
+                          <button
+                            className="btn btn-outline-primary admin-view-btn"
+                            type="button"
+                            onClick={() => setSelectedUser(user)}
+                          >
+                            View
+                          </button>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center py-4 text-secondary">
+                      <td colSpan="8" className="text-center py-4 text-secondary">
                         No user data available.
                       </td>
                     </tr>
@@ -738,9 +821,53 @@ function AdminDashboard() {
           <div className="admin-section-card p-4 p-md-5">
             <h3 className="admin-section-title">Recent Purchases & Enrollment Insights</h3>
             <p className="admin-section-subtitle">
-              Track who purchased what, payment status, course progress, quiz completion,
-              and certificate issuance from one place.
+              Search and filter enrollment records with payment, progress, quiz, and certificate info.
             </p>
+
+            <div className="admin-filter-grid purchase-grid">
+              <input
+                type="text"
+                className="form-control admin-input"
+                placeholder="Search by user, email, internship, branch, category..."
+                value={purchaseSearch}
+                onChange={(e) => setPurchaseSearch(e.target.value)}
+              />
+
+              <select
+                className="form-select admin-select"
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+              >
+                <option value="All">All Payments</option>
+                <option value="Paid">Paid</option>
+                <option value="Failed">Failed</option>
+                <option value="Created">Created</option>
+              </select>
+
+              <select
+                className="form-select admin-select"
+                value={certificateFilter}
+                onChange={(e) => setCertificateFilter(e.target.value)}
+              >
+                <option value="All">All Certificates</option>
+                <option value="Issued">Issued</option>
+                <option value="Not Issued">Not Issued</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                type="button"
+                onClick={() => {
+                  setPurchaseSearch("");
+                  setPaymentFilter("All");
+                  setCertificateFilter("All");
+                }}
+              >
+                Reset Purchase Filters
+              </button>
+            </div>
 
             <div className="admin-table-wrap">
               <table className="admin-table">
@@ -756,11 +883,12 @@ function AdminDashboard() {
                     <th>Quiz</th>
                     <th>Eligible</th>
                     <th>Certificate</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentPurchases.length > 0 ? (
-                    recentPurchases.map((item) => (
+                  {filteredPurchases.length > 0 ? (
+                    filteredPurchases.map((item) => (
                       <tr key={item._id}>
                         <td>
                           <div className="admin-user-name">
@@ -826,11 +954,21 @@ function AdminDashboard() {
                             </span>
                           )}
                         </td>
+
+                        <td>
+                          <button
+                            className="btn btn-outline-primary admin-view-btn"
+                            type="button"
+                            onClick={() => setSelectedPurchase(item)}
+                          >
+                            View
+                          </button>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="10" className="text-center py-4 text-secondary">
+                      <td colSpan="11" className="text-center py-4 text-secondary">
                         No purchase data available.
                       </td>
                     </tr>
@@ -841,6 +979,137 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {selectedUser && (
+        <div className="admin-modal-backdrop" onClick={() => setSelectedUser(null)}>
+          <div
+            className="admin-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+              <div>
+                <h3 className="fw-bold mb-2">{selectedUser.name || "Unknown User"}</h3>
+                <div className="d-flex gap-2 flex-wrap">
+                  {getUserRoleBadge(selectedUser.role)}
+                  {getUserActiveBadge(selectedUser.isActive)}
+                </div>
+              </div>
+
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                onClick={() => setSelectedUser(null)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="row g-4">
+              <div className="col-md-6">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Profile Details</h5>
+                  <p className="mb-2"><strong>Email:</strong> {selectedUser.email || "N/A"}</p>
+                  <p className="mb-2"><strong>Joined:</strong> {formatDate(selectedUser.createdAt)}</p>
+                  <p className="mb-0"><strong>Last Login:</strong> {formatDateTime(selectedUser.lastLoginAt)}</p>
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Performance Summary</h5>
+                  <p className="mb-2"><strong>Total Purchases:</strong> {selectedUser.purchasesCount || 0}</p>
+                  <p className="mb-0"><strong>Total Certificates:</strong> {selectedUser.certificatesCount || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedPurchase && (
+        <div
+          className="admin-modal-backdrop"
+          onClick={() => setSelectedPurchase(null)}
+        >
+          <div
+            className="admin-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+              <div>
+                <h3 className="fw-bold mb-2">
+                  {selectedPurchase.internship?.title || "Purchase Details"}
+                </h3>
+                <div className="d-flex gap-2 flex-wrap">
+                  {getPaymentBadge(selectedPurchase.paymentStatus)}
+                  {getYesNoBadge(
+                    selectedPurchase.progress?.certificateEligible,
+                    "Eligible",
+                    "Locked"
+                  )}
+                </div>
+              </div>
+
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                onClick={() => setSelectedPurchase(null)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="row g-4 mb-4">
+              <div className="col-md-6">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">User Info</h5>
+                  <p className="mb-2"><strong>Name:</strong> {selectedPurchase.user?.name || "Unknown User"}</p>
+                  <p className="mb-2"><strong>Email:</strong> {selectedPurchase.user?.email || "N/A"}</p>
+                  <p className="mb-0"><strong>Last Login:</strong> {formatDateTime(selectedPurchase.user?.lastLoginAt)}</p>
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Internship Info</h5>
+                  <p className="mb-2"><strong>Branch:</strong> {selectedPurchase.internship?.branch || "N/A"}</p>
+                  <p className="mb-2"><strong>Category:</strong> {selectedPurchase.internship?.category || "N/A"}</p>
+                  <p className="mb-0"><strong>Duration:</strong> {selectedPurchase.durationLabel || "N/A"}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="row g-4">
+              <div className="col-md-4">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Payment</h5>
+                  <p className="mb-2"><strong>Amount:</strong> ₹{selectedPurchase.amount || 0}</p>
+                  <p className="mb-2"><strong>Status:</strong> {selectedPurchase.paymentStatus || "N/A"}</p>
+                  <p className="mb-0"><strong>Date:</strong> {formatDate(selectedPurchase.createdAt)}</p>
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Learning</h5>
+                  <p className="mb-2"><strong>Progress:</strong> {selectedPurchase.progress?.overallProgress || 0}%</p>
+                  <p className="mb-2"><strong>Quiz:</strong> {selectedPurchase.quiz?.passed ? "Passed" : "Pending"}</p>
+                  <p className="mb-0"><strong>Duration Rule:</strong> {selectedPurchase.progress?.durationCompleted ? "Completed" : "Pending"}</p>
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Certificate</h5>
+                  <p className="mb-2"><strong>Eligible:</strong> {selectedPurchase.progress?.certificateEligible ? "Yes" : "No"}</p>
+                  <p className="mb-2"><strong>Issued:</strong> {selectedPurchase.certificate?.certificateId ? "Yes" : "No"}</p>
+                  <p className="mb-0">
+                    <strong>ID:</strong> {selectedPurchase.certificate?.certificateId || "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
