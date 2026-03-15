@@ -42,10 +42,14 @@ function AdminDashboard() {
 
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("All");
+  const [userDateFrom, setUserDateFrom] = useState("");
+  const [userDateTo, setUserDateTo] = useState("");
 
   const [purchaseSearch, setPurchaseSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("All");
   const [certificateFilter, setCertificateFilter] = useState("All");
+  const [purchaseDateFrom, setPurchaseDateFrom] = useState("");
+  const [purchaseDateTo, setPurchaseDateTo] = useState("");
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -55,6 +59,8 @@ function AdminDashboard() {
     type: "success",
     message: "",
   });
+
+  const PIE_COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#7c3aed"];
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -82,6 +88,24 @@ function AdminDashboard() {
     fetchStats();
   }, []);
 
+  const isWithinDateRange = (value, fromDate, toDate) => {
+    if (!value) return false;
+    const itemDate = new Date(value);
+    if (Number.isNaN(itemDate.getTime())) return false;
+
+    if (fromDate) {
+      const from = new Date(`${fromDate}T00:00:00`);
+      if (itemDate < from) return false;
+    }
+
+    if (toDate) {
+      const to = new Date(`${toDate}T23:59:59`);
+      if (itemDate > to) return false;
+    }
+
+    return true;
+  };
+
   const filteredUsers = useMemo(() => {
     const query = userSearch.trim().toLowerCase();
 
@@ -94,9 +118,13 @@ function AdminDashboard() {
       const matchesRole =
         userRoleFilter === "All" || user.role === userRoleFilter.toLowerCase();
 
-      return matchesSearch && matchesRole;
+      const matchesDate =
+        (!userDateFrom && !userDateTo) ||
+        isWithinDateRange(user.createdAt, userDateFrom, userDateTo);
+
+      return matchesSearch && matchesRole && matchesDate;
     });
-  }, [recentUsers, userSearch, userRoleFilter]);
+  }, [recentUsers, userSearch, userRoleFilter, userDateFrom, userDateTo]);
 
   const filteredPurchases = useMemo(() => {
     const query = purchaseSearch.trim().toLowerCase();
@@ -120,9 +148,20 @@ function AdminDashboard() {
         (certificateFilter === "Issued" && hasCertificate) ||
         (certificateFilter === "Not Issued" && !hasCertificate);
 
-      return matchesSearch && matchesPayment && matchesCertificate;
+      const matchesDate =
+        (!purchaseDateFrom && !purchaseDateTo) ||
+        isWithinDateRange(item.createdAt, purchaseDateFrom, purchaseDateTo);
+
+      return matchesSearch && matchesPayment && matchesCertificate && matchesDate;
     });
-  }, [recentPurchases, purchaseSearch, paymentFilter, certificateFilter]);
+  }, [
+    recentPurchases,
+    purchaseSearch,
+    paymentFilter,
+    certificateFilter,
+    purchaseDateFrom,
+    purchaseDateTo,
+  ]);
 
   const chartPrograms = useMemo(
     () => [
@@ -161,10 +200,7 @@ function AdminDashboard() {
   const chartLearning = useMemo(
     () => [
       { name: "Quiz Passed", value: stats.totalQuizPassed || 0 },
-      {
-        name: "Certificates",
-        value: stats.totalCertificatesIssued || 0,
-      },
+      { name: "Certificates", value: stats.totalCertificatesIssued || 0 },
       { name: "Modules", value: stats.totalModules || 0 },
       { name: "Videos", value: stats.totalVideos || 0 },
     ],
@@ -198,6 +234,98 @@ function AdminDashboard() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const csvEscape = (value) => {
+    const text = value === null || value === undefined ? "" : String(value);
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+
+  const downloadCsv = (rows, fileName) => {
+    if (!rows.length) {
+      showToast("error", "No data available to export");
+      return;
+    }
+
+    const csvContent = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+    showToast("success", `${fileName} exported successfully`);
+  };
+
+  const exportUsersCsv = () => {
+    const rows = [
+      [
+        "Name",
+        "Email",
+        "Role",
+        "Status",
+        "Joined Date",
+        "Last Login",
+        "Purchases Count",
+        "Certificates Count",
+      ],
+      ...filteredUsers.map((user) => [
+        user.name || "",
+        user.email || "",
+        user.role || "",
+        user.isActive ? "Active" : "Inactive",
+        formatDate(user.createdAt),
+        formatDateTime(user.lastLoginAt),
+        user.purchasesCount || 0,
+        user.certificatesCount || 0,
+      ]),
+    ];
+
+    downloadCsv(rows, "internova_users_export.csv");
+  };
+
+  const exportPurchasesCsv = () => {
+    const rows = [
+      [
+        "User Name",
+        "User Email",
+        "Internship Title",
+        "Branch",
+        "Category",
+        "Duration",
+        "Amount",
+        "Payment Status",
+        "Purchase Date",
+        "Progress %",
+        "Quiz Passed",
+        "Quiz Percentage",
+        "Certificate Eligible",
+        "Certificate Issued",
+        "Certificate ID",
+      ],
+      ...filteredPurchases.map((item) => [
+        item.user?.name || "",
+        item.user?.email || "",
+        item.internship?.title || "",
+        item.internship?.branch || "",
+        item.internship?.category || "",
+        item.durationLabel || "",
+        item.amount || 0,
+        item.paymentStatus || "",
+        formatDate(item.createdAt),
+        item.progress?.overallProgress || 0,
+        item.quiz?.passed ? "Yes" : "No",
+        item.quiz?.percentage || 0,
+        item.progress?.certificateEligible ? "Yes" : "No",
+        item.certificate?.certificateId ? "Yes" : "No",
+        item.certificate?.certificateId || "",
+      ]),
+    ];
+
+    downloadCsv(rows, "internova_purchases_export.csv");
   };
 
   const getProgramStatusBadge = (isActive) =>
@@ -295,7 +423,6 @@ function AdminDashboard() {
           position: relative;
           overflow: hidden;
         }
-
         .admin-dashboard-orb {
           position: absolute;
           border-radius: 50%;
@@ -304,7 +431,6 @@ function AdminDashboard() {
           animation: adminDashboardFloat 9s ease-in-out infinite;
           pointer-events: none;
         }
-
         .admin-dashboard-orb-1 {
           width: 220px;
           height: 220px;
@@ -312,7 +438,6 @@ function AdminDashboard() {
           left: -60px;
           background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(14,165,233,0.18));
         }
-
         .admin-dashboard-orb-2 {
           width: 280px;
           height: 280px;
@@ -321,12 +446,10 @@ function AdminDashboard() {
           background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(59,130,246,0.22));
           animation-delay: 1.2s;
         }
-
         .admin-dashboard-shell {
           position: relative;
           z-index: 2;
         }
-
         .admin-dashboard-hero {
           border: 1px solid rgba(255,255,255,0.42);
           background:
@@ -338,7 +461,6 @@ function AdminDashboard() {
             0 24px 70px rgba(15, 23, 42, 0.16),
             0 8px 24px rgba(59,130,246,0.08);
         }
-
         .admin-dashboard-hero::before {
           content: "";
           position: absolute;
@@ -348,7 +470,6 @@ function AdminDashboard() {
             radial-gradient(circle at 82% 74%, rgba(255,255,255,0.08), transparent 18%);
           pointer-events: none;
         }
-
         .admin-dashboard-chip {
           display: inline-flex;
           align-items: center;
@@ -364,21 +485,18 @@ function AdminDashboard() {
           text-transform: uppercase;
           margin-bottom: 18px;
         }
-
         .admin-dashboard-title {
           font-size: 2.2rem;
           font-weight: 800;
           letter-spacing: -0.03em;
           margin-bottom: 10px;
         }
-
         .admin-dashboard-text {
           color: rgba(255,255,255,0.82);
           line-height: 1.8;
           margin-bottom: 0;
           max-width: 760px;
         }
-
         .admin-stat-card,
         .admin-chart-card {
           border-radius: 28px;
@@ -392,33 +510,28 @@ function AdminDashboard() {
           height: 100%;
           transition: all 0.35s ease;
         }
-
         .admin-stat-card:hover,
         .admin-chart-card:hover {
           transform: translateY(-4px);
         }
-
         .admin-stat-label {
           font-size: 0.9rem;
           color: #64748b;
           margin-bottom: 8px;
           font-weight: 600;
         }
-
         .admin-stat-value {
           font-size: 2rem;
           font-weight: 800;
           color: #0f172a;
           margin-bottom: 0;
         }
-
         .admin-chart-title {
           font-size: 1.1rem;
           font-weight: 800;
           color: #0f172a;
           margin-bottom: 12px;
         }
-
         .admin-section-card {
           border: 1px solid rgba(255,255,255,0.42);
           background: rgba(255,255,255,0.72);
@@ -428,20 +541,17 @@ function AdminDashboard() {
             0 8px 24px rgba(59,130,246,0.08);
           border-radius: 28px;
         }
-
         .admin-section-title {
           font-size: 1.35rem;
           font-weight: 800;
           color: #0f172a;
           margin-bottom: 10px;
         }
-
         .admin-section-subtitle {
           color: #64748b;
           line-height: 1.8;
           margin-bottom: 22px;
         }
-
         .admin-recent-card {
           border-radius: 22px;
           border: 1px solid #e2e8f0;
@@ -449,40 +559,34 @@ function AdminDashboard() {
           padding: 18px;
           height: 100%;
         }
-
         .admin-recent-title {
           font-size: 1.08rem;
           font-weight: 800;
           color: #0f172a;
           margin-bottom: 8px;
         }
-
         .admin-mini-text {
           color: #64748b;
           line-height: 1.7;
           font-size: 0.95rem;
         }
-
         .admin-action-btn {
           min-height: 48px;
           border-radius: 16px;
           font-weight: 800;
         }
-
         .admin-table-wrap {
           overflow-x: auto;
           border-radius: 20px;
           border: 1px solid #e2e8f0;
           background: rgba(255,255,255,0.92);
         }
-
         .admin-table {
           width: 100%;
           min-width: 980px;
           border-collapse: separate;
           border-spacing: 0;
         }
-
         .admin-table thead th {
           background: #eff6ff;
           color: #1e3a8a;
@@ -492,7 +596,6 @@ function AdminDashboard() {
           border-bottom: 1px solid #dbeafe;
           white-space: nowrap;
         }
-
         .admin-table tbody td {
           padding: 16px 14px;
           border-bottom: 1px solid #eef2f7;
@@ -500,22 +603,18 @@ function AdminDashboard() {
           color: #0f172a;
           font-size: 0.95rem;
         }
-
         .admin-table tbody tr:hover {
           background: rgba(239,246,255,0.55);
         }
-
         .admin-user-name {
           font-weight: 800;
           color: #0f172a;
         }
-
         .admin-user-email {
           color: #64748b;
           font-size: 0.9rem;
           margin-top: 2px;
         }
-
         .admin-progress-pill {
           display: inline-flex;
           align-items: center;
@@ -528,14 +627,12 @@ function AdminDashboard() {
           font-weight: 800;
           border: 1px solid #93c5fd;
         }
-
         .admin-filter-grid {
           display: grid;
-          grid-template-columns: 2fr 1fr 1fr;
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
           gap: 14px;
           margin-bottom: 22px;
         }
-
         .admin-input,
         .admin-select {
           min-height: 52px;
@@ -543,13 +640,11 @@ function AdminDashboard() {
           border: 1px solid #dbe3f0;
           background: #f8fafc;
         }
-
         .admin-view-btn {
           min-height: 40px;
           border-radius: 12px;
           font-weight: 700;
         }
-
         .admin-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -561,7 +656,6 @@ function AdminDashboard() {
           justify-content: center;
           padding: 18px;
         }
-
         .admin-modal-card {
           width: min(860px, 100%);
           max-height: 90vh;
@@ -572,7 +666,6 @@ function AdminDashboard() {
           box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
           padding: 24px;
         }
-
         .admin-info-box {
           border: 1px solid #e2e8f0;
           border-radius: 18px;
@@ -580,17 +673,14 @@ function AdminDashboard() {
           padding: 18px;
           height: 100%;
         }
-
         @keyframes adminDashboardFloat {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           50% { transform: translateY(-18px) translateX(10px); }
         }
-
         @media (max-width: 991px) {
           .admin-dashboard-title { font-size: 1.95rem; }
           .admin-filter-grid { grid-template-columns: 1fr; }
         }
-
         @media (max-width: 767px) {
           .admin-dashboard-page { padding: 22px 0; }
           .admin-dashboard-title { font-size: 1.7rem; }
@@ -697,7 +787,7 @@ function AdminDashboard() {
                   <PieChart>
                     <Pie data={chartPrograms} dataKey="value" nameKey="name" outerRadius={95} label>
                       {chartPrograms.map((_, index) => (
-                        <Cell key={index} />
+                        <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -717,7 +807,7 @@ function AdminDashboard() {
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" name="Count" />
+                    <Bar dataKey="value" fill="#2563eb" name="Count" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -730,7 +820,7 @@ function AdminDashboard() {
                   <PieChart>
                     <Pie data={chartPurchases} dataKey="value" nameKey="name" outerRadius={95} label>
                       {chartPurchases.map((_, index) => (
-                        <Cell key={index} />
+                        <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -750,7 +840,7 @@ function AdminDashboard() {
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" name="Count" />
+                    <Bar dataKey="value" fill="#16a34a" name="Count" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -788,10 +878,22 @@ function AdminDashboard() {
           </div>
 
           <div className="admin-section-card p-4 p-md-5 mb-4">
-            <h3 className="admin-section-title">Recent Users</h3>
-            <p className="admin-section-subtitle">
-              Search, filter, and view latest registered users with login and purchase insights.
-            </p>
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div>
+                <h3 className="admin-section-title">Recent Users</h3>
+                <p className="admin-section-subtitle">
+                  Search, filter, and export latest registered users with login and purchase insights.
+                </p>
+              </div>
+
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={exportUsersCsv}
+              >
+                Export Users CSV
+              </button>
+            </div>
 
             <div className="admin-filter-grid">
               <input
@@ -812,12 +914,28 @@ function AdminDashboard() {
                 <option value="User">User</option>
               </select>
 
+              <input
+                type="date"
+                className="form-control admin-input"
+                value={userDateFrom}
+                onChange={(e) => setUserDateFrom(e.target.value)}
+              />
+
+              <input
+                type="date"
+                className="form-control admin-input"
+                value={userDateTo}
+                onChange={(e) => setUserDateTo(e.target.value)}
+              />
+
               <button
                 className="btn btn-outline-dark admin-action-btn"
                 type="button"
                 onClick={() => {
                   setUserSearch("");
                   setUserRoleFilter("All");
+                  setUserDateFrom("");
+                  setUserDateTo("");
                 }}
               >
                 Reset Filters
@@ -876,10 +994,22 @@ function AdminDashboard() {
           </div>
 
           <div className="admin-section-card p-4 p-md-5">
-            <h3 className="admin-section-title">Recent Purchases & Enrollment Insights</h3>
-            <p className="admin-section-subtitle">
-              Search and filter enrollment records with payment, progress, quiz, and certificate info.
-            </p>
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div>
+                <h3 className="admin-section-title">Recent Purchases & Enrollment Insights</h3>
+                <p className="admin-section-subtitle">
+                  Search, filter, and export enrollment records with payment, progress, quiz, and certificate info.
+                </p>
+              </div>
+
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={exportPurchasesCsv}
+              >
+                Export Purchases CSV
+              </button>
+            </div>
 
             <div className="admin-filter-grid">
               <input
@@ -910,6 +1040,20 @@ function AdminDashboard() {
                 <option value="Issued">Issued</option>
                 <option value="Not Issued">Not Issued</option>
               </select>
+
+              <input
+                type="date"
+                className="form-control admin-input"
+                value={purchaseDateFrom}
+                onChange={(e) => setPurchaseDateFrom(e.target.value)}
+              />
+
+              <input
+                type="date"
+                className="form-control admin-input"
+                value={purchaseDateTo}
+                onChange={(e) => setPurchaseDateTo(e.target.value)}
+              />
             </div>
 
             <div className="mb-3">
@@ -920,6 +1064,8 @@ function AdminDashboard() {
                   setPurchaseSearch("");
                   setPaymentFilter("All");
                   setCertificateFilter("All");
+                  setPurchaseDateFrom("");
+                  setPurchaseDateTo("");
                 }}
               >
                 Reset Purchase Filters
