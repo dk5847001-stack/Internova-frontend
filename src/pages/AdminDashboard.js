@@ -38,7 +38,10 @@ function AdminDashboard() {
   const [recentInternships, setRecentInternships] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentPurchases, setRecentPurchases] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
 
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("All");
@@ -76,132 +79,6 @@ function AdminDashboard() {
       setToast({ show: false, type: "success", message: "" });
     }, 3000);
   };
-
-  const fetchOverview = async () => {
-    const { data } = await API.get("/admin/overview");
-    setStats(data.stats || {});
-    setRecentInternships(data.recentInternships || []);
-  };
-
-  const fetchUsers = async () => {
-    const { data } = await API.get("/admin/users", {
-      params: {
-        page: usersPage,
-        limit: usersLimit,
-        search: userSearch,
-        role: userRoleFilter,
-        from: userDateFrom,
-        to: userDateTo,
-      },
-    });
-
-    setRecentUsers(data.items || []);
-    setUsersTotalPages(data.totalPages || 1);
-    setUsersTotal(data.total || 0);
-  };
-
-  const fetchPurchases = async () => {
-    const { data } = await API.get("/admin/purchases", {
-      params: {
-        page: purchasesPage,
-        limit: purchasesLimit,
-        search: purchaseSearch,
-        paymentStatus: paymentFilter,
-        certificateStatus: certificateFilter,
-        from: purchaseDateFrom,
-        to: purchaseDateTo,
-      },
-    });
-
-    setRecentPurchases(data.items || []);
-    setPurchasesTotalPages(data.totalPages || 1);
-    setPurchasesTotal(data.total || 0);
-  };
-
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([fetchOverview(), fetchUsers(), fetchPurchases()]);
-    } catch (error) {
-      console.error("Failed to fetch admin dashboard data:", error);
-      showToast("error", "Failed to fetch admin dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAll();
-  }, []);
-
-  useEffect(() => {
-    fetchUsers().catch((error) => {
-      console.error("Users fetch failed:", error);
-      showToast("error", "Failed to fetch users");
-    });
-  }, [usersPage, userRoleFilter, userDateFrom, userDateTo]);
-
-  useEffect(() => {
-    fetchPurchases().catch((error) => {
-      console.error("Purchases fetch failed:", error);
-      showToast("error", "Failed to fetch purchases");
-    });
-  }, [
-    purchasesPage,
-    paymentFilter,
-    certificateFilter,
-    purchaseDateFrom,
-    purchaseDateTo,
-  ]);
-
-  const chartPrograms = useMemo(
-    () => [
-      { name: "Active", value: stats.activePrograms || 0 },
-      { name: "Inactive", value: stats.inactivePrograms || 0 },
-    ],
-    [stats.activePrograms, stats.inactivePrograms]
-  );
-
-  const chartUsers = useMemo(
-    () => [
-      { name: "Admins", value: stats.totalAdmins || 0 },
-      { name: "Users", value: stats.totalNormalUsers || 0 },
-      { name: "Recent Logins", value: stats.recentlyLoggedInUsers || 0 },
-    ],
-    [stats.totalAdmins, stats.totalNormalUsers, stats.recentlyLoggedInUsers]
-  );
-
-  const chartPurchases = useMemo(
-    () => [
-      { name: "Paid", value: stats.paidPurchases || 0 },
-      { name: "Failed", value: stats.failedPurchases || 0 },
-      {
-        name: "Created",
-        value: Math.max(
-          0,
-          (stats.totalPurchases || 0) -
-            (stats.paidPurchases || 0) -
-            (stats.failedPurchases || 0)
-        ),
-      },
-    ],
-    [stats.totalPurchases, stats.paidPurchases, stats.failedPurchases]
-  );
-
-  const chartLearning = useMemo(
-    () => [
-      { name: "Quiz Passed", value: stats.totalQuizPassed || 0 },
-      { name: "Certificates", value: stats.totalCertificatesIssued || 0 },
-      { name: "Modules", value: stats.totalModules || 0 },
-      { name: "Videos", value: stats.totalVideos || 0 },
-    ],
-    [
-      stats.totalQuizPassed,
-      stats.totalCertificatesIssued,
-      stats.totalModules,
-      stats.totalVideos,
-    ]
-  );
 
   const formatDate = (value) => {
     if (!value) return "N/A";
@@ -319,23 +196,113 @@ function AdminDashboard() {
     downloadCsv(rows, "internova_purchases_export.csv");
   };
 
-  const handleUserSearch = async () => {
+  const fetchOverview = async () => {
+    const { data } = await API.get("/admin/overview");
+    setStats(data.stats || {});
+    setRecentInternships(data.recentInternships || []);
+  };
+
+  const fetchUsers = async ({
+    page = usersPage,
+    search = userSearch,
+    role = userRoleFilter,
+    from = userDateFrom,
+    to = userDateTo,
+  } = {}) => {
+    setUsersLoading(true);
     try {
-      setUsersPage(1);
       const { data } = await API.get("/admin/users", {
         params: {
-          page: 1,
+          page,
           limit: usersLimit,
-          search: userSearch,
-          role: userRoleFilter,
-          from: userDateFrom,
-          to: userDateTo,
+          search,
+          role,
+          from,
+          to,
         },
       });
 
       setRecentUsers(data.items || []);
       setUsersTotalPages(data.totalPages || 1);
       setUsersTotal(data.total || 0);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const fetchPurchases = async ({
+    page = purchasesPage,
+    search = purchaseSearch,
+    paymentStatus = paymentFilter,
+    certificateStatus = certificateFilter,
+    from = purchaseDateFrom,
+    to = purchaseDateTo,
+  } = {}) => {
+    setPurchasesLoading(true);
+    try {
+      const { data } = await API.get("/admin/purchases", {
+        params: {
+          page,
+          limit: purchasesLimit,
+          search,
+          paymentStatus,
+          certificateStatus,
+          from,
+          to,
+        },
+      });
+
+      setRecentPurchases(data.items || []);
+      setPurchasesTotalPages(data.totalPages || 1);
+      setPurchasesTotal(data.total || 0);
+    } finally {
+      setPurchasesLoading(false);
+    }
+  };
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([fetchOverview(), fetchUsers({ page: 1 }), fetchPurchases({ page: 1 })]);
+    } catch (error) {
+      console.error("Failed to fetch admin dashboard data:", error);
+      showToast("error", "Failed to fetch admin dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    fetchUsers({ page: usersPage }).catch((error) => {
+      console.error("Users fetch failed:", error);
+      showToast("error", "Failed to fetch users");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersPage]);
+
+  useEffect(() => {
+    fetchPurchases({ page: purchasesPage }).catch((error) => {
+      console.error("Purchases fetch failed:", error);
+      showToast("error", "Failed to fetch purchases");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [purchasesPage]);
+
+  const handleUserSearch = async () => {
+    try {
+      setUsersPage(1);
+      await fetchUsers({
+        page: 1,
+        search: userSearch,
+        role: userRoleFilter,
+        from: userDateFrom,
+        to: userDateTo,
+      });
     } catch (error) {
       console.error("User search failed:", error);
       showToast("error", "Failed to search users");
@@ -345,26 +312,156 @@ function AdminDashboard() {
   const handlePurchaseSearch = async () => {
     try {
       setPurchasesPage(1);
-      const { data } = await API.get("/admin/purchases", {
-        params: {
-          page: 1,
-          limit: purchasesLimit,
-          search: purchaseSearch,
-          paymentStatus: paymentFilter,
-          certificateStatus: certificateFilter,
-          from: purchaseDateFrom,
-          to: purchaseDateTo,
-        },
+      await fetchPurchases({
+        page: 1,
+        search: purchaseSearch,
+        paymentStatus: paymentFilter,
+        certificateStatus: certificateFilter,
+        from: purchaseDateFrom,
+        to: purchaseDateTo,
       });
-
-      setRecentPurchases(data.items || []);
-      setPurchasesTotalPages(data.totalPages || 1);
-      setPurchasesTotal(data.total || 0);
     } catch (error) {
       console.error("Purchase search failed:", error);
       showToast("error", "Failed to search purchases");
     }
   };
+
+  const handleToggleUserStatus = async (user) => {
+    try {
+      const nextStatus = !user.isActive;
+
+      const { data } = await API.patch(`/admin/users/${user._id}/status`, {
+        isActive: nextStatus,
+      });
+
+      setRecentUsers((prev) =>
+        prev.map((item) =>
+          item._id === user._id ? { ...item, isActive: nextStatus } : item
+        )
+      );
+
+      if (selectedUser?._id === user._id) {
+        setSelectedUser((prev) =>
+          prev ? { ...prev, isActive: nextStatus } : prev
+        );
+      }
+
+      showToast(
+        "success",
+        data?.message || `User ${nextStatus ? "activated" : "deactivated"}`
+      );
+    } catch (error) {
+      console.error("Toggle user status failed:", error);
+      showToast(
+        "error",
+        error?.response?.data?.message || "Failed to update user status"
+      );
+    }
+  };
+
+  const handleUpdatePurchaseStatus = async (purchaseId, paymentStatus) => {
+    try {
+      const { data } = await API.patch(`/admin/purchases/${purchaseId}/status`, {
+        paymentStatus,
+      });
+
+      setRecentPurchases((prev) =>
+        prev.map((item) =>
+          item._id === purchaseId ? { ...item, paymentStatus } : item
+        )
+      );
+
+      if (selectedPurchase?._id === purchaseId) {
+        setSelectedPurchase((prev) =>
+          prev ? { ...prev, paymentStatus } : prev
+        );
+      }
+
+      showToast(
+        "success",
+        data?.message || `Purchase marked as ${paymentStatus}`
+      );
+    } catch (error) {
+      console.error("Update purchase status failed:", error);
+      showToast(
+        "error",
+        error?.response?.data?.message || "Failed to update purchase status"
+      );
+    }
+  };
+
+  const handleResendCertificate = async (purchase) => {
+    try {
+      const { data } = await API.post(
+        `/admin/certificates/${purchase._id}/resend`,
+        {}
+      );
+
+      if (data?.certificate?.certificateId) {
+        showToast(
+          "success",
+          `Certificate found: ${data.certificate.certificateId}`
+        );
+      } else {
+        showToast("success", data?.message || "Certificate data loaded");
+      }
+    } catch (error) {
+      console.error("Resend certificate failed:", error);
+      showToast(
+        "error",
+        error?.response?.data?.message || "Failed to fetch certificate"
+      );
+    }
+  };
+
+  const chartPrograms = useMemo(
+    () => [
+      { name: "Active", value: stats.activePrograms || 0 },
+      { name: "Inactive", value: stats.inactivePrograms || 0 },
+    ],
+    [stats.activePrograms, stats.inactivePrograms]
+  );
+
+  const chartUsers = useMemo(
+    () => [
+      { name: "Admins", value: stats.totalAdmins || 0 },
+      { name: "Users", value: stats.totalNormalUsers || 0 },
+      { name: "Recent Logins", value: stats.recentlyLoggedInUsers || 0 },
+    ],
+    [stats.totalAdmins, stats.totalNormalUsers, stats.recentlyLoggedInUsers]
+  );
+
+  const chartPurchases = useMemo(
+    () => [
+      { name: "Paid", value: stats.paidPurchases || 0 },
+      { name: "Failed", value: stats.failedPurchases || 0 },
+      {
+        name: "Created",
+        value: Math.max(
+          0,
+          (stats.totalPurchases || 0) -
+            (stats.paidPurchases || 0) -
+            (stats.failedPurchases || 0)
+        ),
+      },
+    ],
+    [stats.totalPurchases, stats.paidPurchases, stats.failedPurchases]
+  );
+
+  const chartLearning = useMemo(
+    () => [
+      { name: "Quiz Passed", value: stats.totalQuizPassed || 0 },
+      { name: "Certificates", value: stats.totalCertificatesIssued || 0 },
+      { name: "Modules", value: stats.totalModules || 0 },
+      { name: "Videos", value: stats.totalVideos || 0 },
+    ],
+    [
+      stats.totalQuizPassed,
+      stats.totalCertificatesIssued,
+      stats.totalModules,
+      stats.totalVideos,
+    ]
+  );
 
   const getProgramStatusBadge = (isActive) =>
     isActive ? (
@@ -621,7 +718,7 @@ function AdminDashboard() {
         }
         .admin-table {
           width: 100%;
-          min-width: 980px;
+          min-width: 1120px;
           border-collapse: separate;
           border-spacing: 0;
         }
@@ -951,10 +1048,7 @@ function AdminDashboard() {
               <select
                 className="form-select admin-select"
                 value={userRoleFilter}
-                onChange={(e) => {
-                  setUsersPage(1);
-                  setUserRoleFilter(e.target.value);
-                }}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
               >
                 <option value="All">All Roles</option>
                 <option value="Admin">Admin</option>
@@ -964,19 +1058,13 @@ function AdminDashboard() {
                 type="date"
                 className="form-control admin-input"
                 value={userDateFrom}
-                onChange={(e) => {
-                  setUsersPage(1);
-                  setUserDateFrom(e.target.value);
-                }}
+                onChange={(e) => setUserDateFrom(e.target.value)}
               />
               <input
                 type="date"
                 className="form-control admin-input"
                 value={userDateTo}
-                onChange={(e) => {
-                  setUsersPage(1);
-                  setUserDateTo(e.target.value);
-                }}
+                onChange={(e) => setUserDateTo(e.target.value)}
               />
               <button
                 className="btn btn-outline-primary admin-action-btn"
@@ -994,7 +1082,16 @@ function AdminDashboard() {
                   setUserDateFrom("");
                   setUserDateTo("");
                   setUsersPage(1);
-                  fetchUsers();
+                  fetchUsers({
+                    page: 1,
+                    search: "",
+                    role: "All",
+                    from: "",
+                    to: "",
+                  }).catch((error) => {
+                    console.error(error);
+                    showToast("error", "Failed to reset users");
+                  });
                 }}
               >
                 Reset
@@ -1020,7 +1117,13 @@ function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentUsers.length > 0 ? (
+                  {usersLoading ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-4 text-secondary">
+                        Loading users...
+                      </td>
+                    </tr>
+                  ) : recentUsers.length > 0 ? (
                     recentUsers.map((user) => (
                       <tr key={user._id}>
                         <td>
@@ -1034,13 +1137,25 @@ function AdminDashboard() {
                         <td>{user.purchasesCount || 0}</td>
                         <td>{user.certificatesCount || 0}</td>
                         <td>
-                          <button
-                            className="btn btn-outline-primary admin-view-btn"
-                            type="button"
-                            onClick={() => setSelectedUser(user)}
-                          >
-                            View
-                          </button>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <button
+                              className="btn btn-outline-primary admin-view-btn"
+                              type="button"
+                              onClick={() => setSelectedUser(user)}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className={`btn admin-view-btn ${
+                                user.isActive ? "btn-outline-danger" : "btn-outline-success"
+                              }`}
+                              type="button"
+                              onClick={() => handleToggleUserStatus(user)}
+                            >
+                              {user.isActive ? "Deactivate" : "Activate"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1104,10 +1219,7 @@ function AdminDashboard() {
               <select
                 className="form-select admin-select"
                 value={paymentFilter}
-                onChange={(e) => {
-                  setPurchasesPage(1);
-                  setPaymentFilter(e.target.value);
-                }}
+                onChange={(e) => setPaymentFilter(e.target.value)}
               >
                 <option value="All">All Payments</option>
                 <option value="Paid">Paid</option>
@@ -1117,10 +1229,7 @@ function AdminDashboard() {
               <select
                 className="form-select admin-select"
                 value={certificateFilter}
-                onChange={(e) => {
-                  setPurchasesPage(1);
-                  setCertificateFilter(e.target.value);
-                }}
+                onChange={(e) => setCertificateFilter(e.target.value)}
               >
                 <option value="All">All Certificates</option>
                 <option value="Issued">Issued</option>
@@ -1130,19 +1239,13 @@ function AdminDashboard() {
                 type="date"
                 className="form-control admin-input"
                 value={purchaseDateFrom}
-                onChange={(e) => {
-                  setPurchasesPage(1);
-                  setPurchaseDateFrom(e.target.value);
-                }}
+                onChange={(e) => setPurchaseDateFrom(e.target.value)}
               />
               <input
                 type="date"
                 className="form-control admin-input"
                 value={purchaseDateTo}
-                onChange={(e) => {
-                  setPurchasesPage(1);
-                  setPurchaseDateTo(e.target.value);
-                }}
+                onChange={(e) => setPurchaseDateTo(e.target.value)}
               />
               <button
                 className="btn btn-outline-primary admin-action-btn"
@@ -1164,7 +1267,17 @@ function AdminDashboard() {
                   setPurchaseDateFrom("");
                   setPurchaseDateTo("");
                   setPurchasesPage(1);
-                  fetchPurchases();
+                  fetchPurchases({
+                    page: 1,
+                    search: "",
+                    paymentStatus: "All",
+                    certificateStatus: "All",
+                    from: "",
+                    to: "",
+                  }).catch((error) => {
+                    console.error(error);
+                    showToast("error", "Failed to reset purchases");
+                  });
                 }}
               >
                 Reset Purchase Filters
@@ -1193,7 +1306,13 @@ function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentPurchases.length > 0 ? (
+                  {purchasesLoading ? (
+                    <tr>
+                      <td colSpan="11" className="text-center py-4 text-secondary">
+                        Loading purchases...
+                      </td>
+                    </tr>
+                  ) : recentPurchases.length > 0 ? (
                     recentPurchases.map((item) => (
                       <tr key={item._id}>
                         <td>
@@ -1246,13 +1365,39 @@ function AdminDashboard() {
                           )}
                         </td>
                         <td>
-                          <button
-                            className="btn btn-outline-primary admin-view-btn"
-                            type="button"
-                            onClick={() => setSelectedPurchase(item)}
-                          >
-                            View
-                          </button>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <button
+                              className="btn btn-outline-primary admin-view-btn"
+                              type="button"
+                              onClick={() => setSelectedPurchase(item)}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="btn btn-outline-success admin-view-btn"
+                              type="button"
+                              onClick={() => handleUpdatePurchaseStatus(item._id, "paid")}
+                            >
+                              Mark Paid
+                            </button>
+
+                            <button
+                              className="btn btn-outline-danger admin-view-btn"
+                              type="button"
+                              onClick={() => handleUpdatePurchaseStatus(item._id, "failed")}
+                            >
+                              Mark Failed
+                            </button>
+
+                            <button
+                              className="btn btn-outline-warning admin-view-btn"
+                              type="button"
+                              onClick={() => handleResendCertificate(item)}
+                            >
+                              Certificate
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1302,12 +1447,23 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <button
-                className="btn btn-outline-dark admin-action-btn"
-                onClick={() => setSelectedUser(null)}
-              >
-                Close
-              </button>
+              <div className="d-flex gap-2 flex-wrap">
+                <button
+                  className={`btn admin-action-btn ${
+                    selectedUser?.isActive ? "btn-outline-danger" : "btn-outline-success"
+                  }`}
+                  onClick={() => handleToggleUserStatus(selectedUser)}
+                >
+                  {selectedUser?.isActive ? "Deactivate User" : "Activate User"}
+                </button>
+
+                <button
+                  className="btn btn-outline-dark admin-action-btn"
+                  onClick={() => setSelectedUser(null)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
             <div className="row g-4">
@@ -1350,12 +1506,35 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <button
-                className="btn btn-outline-dark admin-action-btn"
-                onClick={() => setSelectedPurchase(null)}
-              >
-                Close
-              </button>
+              <div className="d-flex gap-2 flex-wrap">
+                <button
+                  className="btn btn-outline-success admin-action-btn"
+                  onClick={() => handleUpdatePurchaseStatus(selectedPurchase._id, "paid")}
+                >
+                  Mark Paid
+                </button>
+
+                <button
+                  className="btn btn-outline-danger admin-action-btn"
+                  onClick={() => handleUpdatePurchaseStatus(selectedPurchase._id, "failed")}
+                >
+                  Mark Failed
+                </button>
+
+                <button
+                  className="btn btn-outline-warning admin-action-btn"
+                  onClick={() => handleResendCertificate(selectedPurchase)}
+                >
+                  Certificate
+                </button>
+
+                <button
+                  className="btn btn-outline-dark admin-action-btn"
+                  onClick={() => setSelectedPurchase(null)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
             <div className="row g-4 mb-4">
