@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import API from "../services/api";
+import {
+  convertGoogleDriveToPreviewUrl,
+  isGoogleDriveLink,
+} from "../utils/googleDrive";
 
 const makeDuration = () => ({
   label: "",
@@ -43,6 +47,69 @@ const moveItem = (list, fromIndex, toIndex) => {
   return updated;
 };
 
+const normalizeSingleVideoUrl = (url = "") => {
+  const trimmed = typeof url === "string" ? url.trim() : "";
+  if (!trimmed) return "";
+  if (isGoogleDriveLink(trimmed)) {
+    return convertGoogleDriveToPreviewUrl(trimmed) || trimmed;
+  }
+  return trimmed;
+};
+
+const normalizeModulesWithDriveLinks = (modules = []) => {
+  return reOrderList(
+    (modules || []).map((module, moduleIndex) => ({
+      title: module?.title || "",
+      description: module?.description || "",
+      unlockDay: Number(module?.unlockDay || moduleIndex + 1),
+      order: Number(module?.order || moduleIndex + 1),
+      videos:
+        Array.isArray(module?.videos) && module.videos.length
+          ? reOrderList(
+              module.videos.map((video, videoIndex) => ({
+                title: video?.title || "",
+                description: video?.description || "",
+                videoUrl: normalizeSingleVideoUrl(video?.videoUrl || ""),
+                duration: video?.duration || "",
+                order: Number(video?.order || videoIndex + 1),
+              }))
+            )
+          : [makeVideo()],
+    })),
+    (module) => ({
+      ...module,
+      videos: reOrderList(module.videos || []),
+    })
+  );
+};
+
+const validateGoogleDriveVideoUrls = (modules = []) => {
+  for (const module of modules || []) {
+    for (const video of module.videos || []) {
+      const rawUrl = (video?.videoUrl || "").trim();
+
+      if (!rawUrl) continue;
+
+      if (rawUrl.includes("drive.google.com")) {
+        const converted = convertGoogleDriveToPreviewUrl(rawUrl);
+        if (!converted) {
+          return `Invalid Google Drive link found in video "${video?.title || "Untitled Video"}".`;
+        }
+      }
+    }
+  }
+
+  return "";
+};
+
+const isEmbeddableGoogleDrivePreview = (url = "") => {
+  return (
+    typeof url === "string" &&
+    url.includes("drive.google.com/file/d/") &&
+    url.includes("/preview")
+  );
+};
+
 const initialForm = {
   title: "",
   slug: "",
@@ -80,30 +147,7 @@ const sanitizeImportedData = (data = {}) => {
 
   const modules =
     Array.isArray(data.modules) && data.modules.length
-      ? reOrderList(
-          data.modules.map((m, index) => ({
-            title: m?.title || "",
-            description: m?.description || "",
-            unlockDay: Number(m?.unlockDay || index + 1),
-            order: Number(m?.order || index + 1),
-            videos:
-              Array.isArray(m?.videos) && m.videos.length
-                ? reOrderList(
-                    m.videos.map((v, vIndex) => ({
-                      title: v?.title || "",
-                      description: v?.description || "",
-                      videoUrl: v?.videoUrl || "",
-                      duration: v?.duration || "",
-                      order: Number(v?.order || vIndex + 1),
-                    }))
-                  )
-                : [makeVideo()],
-          })),
-          (module) => ({
-            ...module,
-            videos: reOrderList(module.videos || []),
-          })
-        )
+      ? normalizeModulesWithDriveLinks(data.modules)
       : [makeModule()];
 
   const quiz =
@@ -427,11 +471,40 @@ function AdminInternships() {
   };
 
   const handleVideoChange = (moduleIndex, videoIndex, field, value) => {
-    const updated = [...formData.modules];
-    updated[moduleIndex].videos[videoIndex][field] =
-      field === "order" ? Number(value) : value;
+    setFormData((prev) => {
+      const updatedModules = [...prev.modules];
+      const updatedVideos = [...(updatedModules[moduleIndex]?.videos || [])];
 
-    setFormData((prev) => ({ ...prev, modules: updated }));
+      let finalValue = value;
+
+      if (field === "order") {
+        finalValue = Number(value);
+      }
+
+      if (field === "videoUrl") {
+        const trimmedValue = typeof value === "string" ? value.trim() : "";
+        finalValue = trimmedValue;
+
+        if (trimmedValue && isGoogleDriveLink(trimmedValue)) {
+          finalValue = convertGoogleDriveToPreviewUrl(trimmedValue) || trimmedValue;
+        }
+      }
+
+      updatedVideos[videoIndex] = {
+        ...updatedVideos[videoIndex],
+        [field]: finalValue,
+      };
+
+      updatedModules[moduleIndex] = {
+        ...updatedModules[moduleIndex],
+        videos: updatedVideos,
+      };
+
+      return {
+        ...prev,
+        modules: updatedModules,
+      };
+    });
   };
 
   const addVideo = (moduleIndex) => {
@@ -542,6 +615,8 @@ function AdminInternships() {
   };
 
   const buildPayload = () => {
+    const normalizedModules = normalizeModulesWithDriveLinks(formData.modules);
+
     return {
       title: formData.title.trim(),
       slug: formData.slug.trim(),
@@ -566,7 +641,7 @@ function AdminInternships() {
           order: index + 1,
         })),
 
-      modules: reOrderList(formData.modules)
+      modules: reOrderList(normalizedModules)
         .filter((m) => m.title.trim())
         .map((m, index) => ({
           title: m.title.trim(),
@@ -578,7 +653,7 @@ function AdminInternships() {
             .map((v, vIndex) => ({
               title: v.title.trim(),
               description: v.description.trim(),
-              videoUrl: v.videoUrl.trim(),
+              videoUrl: normalizeSingleVideoUrl(v.videoUrl),
               duration: v.duration.trim(),
               order: vIndex + 1,
             })),
@@ -606,6 +681,12 @@ function AdminInternships() {
     try {
       setLoading(true);
 
+      const driveValidationError = validateGoogleDriveVideoUrls(formData.modules);
+      if (driveValidationError) {
+        showToast("error", driveValidationError);
+        return;
+      }
+
       const payload = buildPayload();
 
       if (!payload.title || !payload.branch || !payload.description) {
@@ -615,6 +696,20 @@ function AdminInternships() {
 
       if (!payload.durations.length) {
         showToast("error", "At least one duration is required");
+        return;
+      }
+
+      if (!payload.modules.length) {
+        showToast("error", "At least one valid module is required");
+        return;
+      }
+
+      const hasAtLeastOneVideo = payload.modules.some(
+        (module) => Array.isArray(module.videos) && module.videos.length > 0
+      );
+
+      if (!hasAtLeastOneVideo) {
+        showToast("error", "At least one valid video is required");
         return;
       }
 
@@ -1125,6 +1220,35 @@ function AdminInternships() {
           background: #000;
         }
 
+        .admin-preview-player-frame {
+          width: 100%;
+          height: 380px;
+          border: none;
+          display: block;
+          background: #000;
+        }
+
+        .admin-drive-note {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          color: #1d4ed8;
+          font-size: 0.82rem;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+
+        .admin-help-text {
+          margin-top: 8px;
+          font-size: 0.82rem;
+          color: #64748b;
+          line-height: 1.6;
+        }
+
         .admin-preview-fallback {
           border-radius: 18px;
           border: 1px dashed #cbd5e1;
@@ -1255,6 +1379,10 @@ function AdminInternships() {
 
           .admin-hero-title {
             font-size: 1.7rem;
+          }
+
+          .admin-preview-player-frame {
+            height: 260px;
           }
         }
       `}</style>
@@ -1812,7 +1940,7 @@ function AdminInternships() {
                             <input
                               type="text"
                               className="form-control admin-input"
-                              placeholder="Video URL"
+                              placeholder="Paste Google Drive link, preview URL, file ID, or MP4 URL"
                               value={video.videoUrl}
                               onChange={(e) =>
                                 handleVideoChange(
@@ -1822,7 +1950,19 @@ function AdminInternships() {
                                   e.target.value
                                 )
                               }
+                              onBlur={(e) =>
+                                handleVideoChange(
+                                  index,
+                                  videoIndex,
+                                  "videoUrl",
+                                  e.target.value
+                                )
+                              }
                             />
+                            <div className="admin-help-text">
+                              Google Drive share link ya file ID paste karoge to system
+                              auto preview link bana dega.
+                            </div>
                           </div>
                           <div className="col-md-2">
                             <input
@@ -2086,16 +2226,34 @@ function AdminInternships() {
 
                   {previewVideo?.videoUrl ? (
                     <>
-                      <div className="admin-preview-player-wrap">
-                        <video
-                          key={previewVideo.videoUrl}
-                          controls
-                          className="admin-preview-player"
-                          src={previewVideo.videoUrl}
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      </div>
+                      {isEmbeddableGoogleDrivePreview(previewVideo.videoUrl) ? (
+                        <>
+                          <div className="admin-drive-note">
+                            Google Drive Preview Mode Active
+                          </div>
+                          <div className="admin-preview-player-wrap">
+                            <iframe
+                              key={previewVideo.videoUrl}
+                              src={previewVideo.videoUrl}
+                              title={previewVideo.title || "Preview Video"}
+                              className="admin-preview-player-frame"
+                              allow="autoplay; fullscreen"
+                              allowFullScreen
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="admin-preview-player-wrap">
+                          <video
+                            key={previewVideo.videoUrl}
+                            controls
+                            className="admin-preview-player"
+                            src={previewVideo.videoUrl}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      )}
 
                       <h5 className="fw-bold mb-2">
                         {previewVideo.title || "Untitled Video"}
