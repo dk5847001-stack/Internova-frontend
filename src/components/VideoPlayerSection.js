@@ -1,4 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  convertVideoUrlToEmbedUrl,
+  isGoogleDriveLink,
+  isYouTubeLink,
+} from "../utils/googleDrive";
 
 function VideoPlayerSection({
   selectedModule,
@@ -33,12 +38,12 @@ function VideoPlayerSection({
 
   const milestoneSteps = useMemo(() => [10, 25, 50, 80, 100], []);
 
-  const videoUrl = selectedVideo?.videoUrl || "";
+  const rawVideoUrl = selectedVideo?.videoUrl || "";
+  const embeddedVideoUrl = convertVideoUrlToEmbedUrl(rawVideoUrl);
 
-  const isGoogleDriveVideo =
-    videoUrl.includes("drive.google.com/file/d/") ||
-    videoUrl.includes("drive.google.com/open?id=") ||
-    videoUrl.includes("drive.google.com/uc?");
+  const isGoogleDriveVideo = isGoogleDriveLink(rawVideoUrl);
+  const isYouTubeVideo = isYouTubeLink(rawVideoUrl);
+  const isIframeVideo = isGoogleDriveVideo || isYouTubeVideo;
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -83,6 +88,13 @@ function VideoPlayerSection({
         onNextVideo();
       }
     }, 1000);
+  };
+
+  const stopDriveTrackingInterval = () => {
+    if (driveTrackingIntervalRef.current) {
+      clearInterval(driveTrackingIntervalRef.current);
+      driveTrackingIntervalRef.current = null;
+    }
   };
 
   const handleCompletionFlow = () => {
@@ -238,13 +250,6 @@ function VideoPlayerSection({
     handleCompletionFlow();
   };
 
-  const stopDriveTrackingInterval = () => {
-    if (driveTrackingIntervalRef.current) {
-      clearInterval(driveTrackingIntervalRef.current);
-      driveTrackingIntervalRef.current = null;
-    }
-  };
-
   const startDriveTrackingInterval = () => {
     stopDriveTrackingInterval();
 
@@ -277,7 +282,7 @@ function VideoPlayerSection({
   };
 
   useEffect(() => {
-    if (!isGoogleDriveVideo || !selectedVideo?.id) return;
+    if (!isIframeVideo || !selectedVideo?.id) return;
 
     if (isDriveTrackingPlaying) {
       startDriveTrackingInterval();
@@ -289,7 +294,7 @@ function VideoPlayerSection({
       stopDriveTrackingInterval();
     };
   }, [
-    isGoogleDriveVideo,
+    isIframeVideo,
     selectedVideo,
     isDriveTrackingPlaying,
     derivedDriveDurationSeconds,
@@ -300,7 +305,7 @@ function VideoPlayerSection({
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopDriveTrackingInterval();
-      } else if (isGoogleDriveVideo && isDriveTrackingPlaying) {
+      } else if (isIframeVideo && isDriveTrackingPlaying) {
         startDriveTrackingInterval();
       }
     };
@@ -310,10 +315,10 @@ function VideoPlayerSection({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isGoogleDriveVideo, isDriveTrackingPlaying, derivedDriveDurationSeconds]);
+  }, [isIframeVideo, isDriveTrackingPlaying, derivedDriveDurationSeconds]);
 
   const handleDriveTrackingPlayPause = () => {
-    if (!isGoogleDriveVideo) return;
+    if (!isIframeVideo) return;
     setIsDriveTrackingPlaying((prev) => !prev);
   };
 
@@ -322,7 +327,7 @@ function VideoPlayerSection({
     pushTrackedMilestone(percent);
     onMarkDemoProgress?.(percent);
 
-    if (isGoogleDriveVideo && derivedDriveDurationSeconds > 0) {
+    if (isIframeVideo && derivedDriveDurationSeconds > 0) {
       const mappedSeconds = Math.floor(
         (percent / 100) * derivedDriveDurationSeconds
       );
@@ -334,6 +339,10 @@ function VideoPlayerSection({
       driveEndedTriggeredRef.current = true;
       handleCompletionFlow();
     }
+  };
+
+  const handlePreventContextMenu = (event) => {
+    event.preventDefault();
   };
 
   if (!selectedModule || !selectedVideo) {
@@ -409,8 +418,11 @@ function VideoPlayerSection({
         </div>
       </div>
 
-      <div className="video-player-wrapper premium-video-wrapper">
-        {isGoogleDriveVideo ? (
+      <div
+        className="video-player-wrapper premium-video-wrapper"
+        onContextMenu={handlePreventContextMenu}
+      >
+        {isIframeVideo ? (
           <div
             style={{
               position: "relative",
@@ -422,11 +434,16 @@ function VideoPlayerSection({
           >
             <iframe
               key={selectedVideo.id}
-              src={videoUrl}
+              src={embeddedVideoUrl}
               title={selectedVideo.title || "Course Video"}
               className="internova-video-player"
-              allow="autoplay; fullscreen"
+              allow={
+                isYouTubeVideo
+                  ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  : "autoplay; fullscreen"
+              }
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
               style={{
                 width: "100%",
                 height: "500px",
@@ -437,27 +454,32 @@ function VideoPlayerSection({
               }}
             />
 
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "90px",
-                height: "90px",
-                zIndex: 10,
-                background: "transparent",
-                cursor: "default",
-              }}
-              aria-hidden="true"
-            />
+            {!isYouTubeVideo && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  width: "90px",
+                  height: "90px",
+                  zIndex: 10,
+                  background: "transparent",
+                  cursor: "default",
+                }}
+                aria-hidden="true"
+              />
+            )}
           </div>
         ) : (
           <video
             ref={videoRef}
             key={selectedVideo.id}
             controls
+            controlsList="nodownload noplaybackrate"
+            disablePictureInPicture
+            onContextMenu={handlePreventContextMenu}
             className="internova-video-player"
-            src={videoUrl}
+            src={rawVideoUrl}
             onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleEndedInternal}
@@ -468,7 +490,7 @@ function VideoPlayerSection({
       </div>
 
       <div className="video-player-controls-note premium-chip-row">
-        {isGoogleDriveVideo ? (
+        {isIframeVideo ? (
           <>
             <button
               type="button"
@@ -526,7 +548,11 @@ function VideoPlayerSection({
         <div className="player-feature-chip">Replay</div>
         <div className="player-feature-chip">Speed Control</div>
         <div className="player-feature-chip">
-          {isGoogleDriveVideo ? "Drive Player" : "Quality Switch"}
+          {isGoogleDriveVideo
+            ? "Drive Player"
+            : isYouTubeVideo
+            ? "YouTube Embed"
+            : "Protected Player"}
         </div>
         <div className="player-feature-chip">Fullscreen</div>
         <div className="player-feature-chip">
@@ -640,7 +666,13 @@ function VideoPlayerSection({
           <h4>Tracking Mode</h4>
           <p>
             {isGoogleDriveVideo
-              ? `Custom duration-based Google Drive tracking is active using "${selectedVideo.duration || "10 min"}" duration. Use Play Tracking / Pause Tracking to control timer.`
+              ? `Custom duration-based Google Drive tracking is active using "${
+                  selectedVideo.duration || "10 min"
+                }" duration. Use Play Tracking / Pause Tracking to control timer.`
+              : isYouTubeVideo
+              ? `Custom duration-based YouTube tracking is active using "${
+                  selectedVideo.duration || "10 min"
+                }" duration. Use Play Tracking / Pause Tracking to control timer.`
               : "This video now tracks real watch milestones and updates course progress progressively."}
           </p>
         </div>
@@ -650,7 +682,9 @@ function VideoPlayerSection({
         <p>
           {isGoogleDriveVideo
             ? "Google Drive videos now use custom duration-based tracking. Timer starts only when you press Play Tracking and pauses when you press Pause Tracking or leave the tab."
-            : "Real watch tracking is now active through video playback milestones. Next upgrade will add resume position, speed memory, and stronger anti-skip tracking."}
+            : isYouTubeVideo
+            ? "YouTube videos now run in embedded mode. Direct file download is not exposed from your app, and progress tracking works through the custom timer flow."
+            : "Direct videos now use a more protected player mode with nodownload enabled. Next upgrade can add resume position, speed memory, and stronger anti-skip tracking."}
         </p>
       </div>
     </div>
