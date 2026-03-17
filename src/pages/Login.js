@@ -383,8 +383,11 @@ function Login() {
 
         .login-action-row {
           display: flex;
-          justify-content: flex-end;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
           margin-bottom: 22px;
+          flex-wrap: wrap;
         }
 
         .login-link {
@@ -492,6 +495,11 @@ function Login() {
 
           .login-feature-item {
             font-size: 0.9rem;
+          }
+
+          .login-action-row {
+            align-items: stretch;
+            flex-direction: column;
           }
         }
       `}</style>
@@ -602,6 +610,10 @@ function Login() {
                           <div className="login-action-row">
                             <Link to="/verify-email-otp" className="login-link">
                               Verify Email OTP
+                            </Link>
+
+                            <Link to="/forgot-password" className="login-link">
+                              Forgot Password?
                             </Link>
                           </div>
 

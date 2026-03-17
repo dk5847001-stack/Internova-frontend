@@ -19,12 +19,23 @@ function VerifyEmailOtp() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(30);
 
   useEffect(() => {
     if (prefilledEmail) {
       setEmail(prefilledEmail);
     }
   }, [prefilledEmail]);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+
+    const timer = setTimeout(() => {
+      setResendTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [resendTimer]);
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
@@ -62,6 +73,7 @@ function VerifyEmailOtp() {
 
       localStorage.setItem("pendingVerificationEmail", email);
       setMessage(data.message || "A new OTP has been sent");
+      setResendTimer(30);
     } catch (error) {
       setMessage(error.response?.data?.message || "Failed to resend OTP");
     } finally {
@@ -320,6 +332,12 @@ function VerifyEmailOtp() {
           transform: translateY(-2px);
         }
 
+        .verify-primary-btn:disabled,
+        .verify-secondary-btn:disabled {
+          opacity: 0.75;
+          cursor: not-allowed;
+        }
+
         .verify-footer {
           text-align: center;
           color: #64748b;
@@ -336,6 +354,13 @@ function VerifyEmailOtp() {
         .verify-link:hover {
           color: #1d4ed8;
           text-decoration: none;
+        }
+
+        .verify-timer-text {
+          margin-top: 12px;
+          text-align: center;
+          color: #64748b;
+          font-weight: 600;
         }
 
         @keyframes verifyFloat {
@@ -428,9 +453,7 @@ function VerifyEmailOtp() {
                               value={otp}
                               onChange={(e) =>
                                 setOtp(
-                                  e.target.value
-                                    .replace(/\D/g, "")
-                                    .slice(0, 6)
+                                  e.target.value.replace(/\D/g, "").slice(0, 6)
                                 )
                               }
                               placeholder="123456"
@@ -452,10 +475,20 @@ function VerifyEmailOtp() {
                           type="button"
                           className="btn verify-secondary-btn w-100 mt-3"
                           onClick={handleResendOtp}
-                          disabled={resendLoading || !email}
+                          disabled={resendLoading || !email || resendTimer > 0}
                         >
-                          {resendLoading ? "Sending New OTP..." : "Resend OTP"}
+                          {resendLoading
+                            ? "Sending New OTP..."
+                            : resendTimer > 0
+                            ? `Resend OTP in ${resendTimer}s`
+                            : "Resend OTP"}
                         </button>
+
+                        {resendTimer > 0 && (
+                          <p className="verify-timer-text">
+                            You can request a new OTP after {resendTimer} seconds.
+                          </p>
+                        )}
 
                         <p className="verify-footer">
                           Back to{" "}

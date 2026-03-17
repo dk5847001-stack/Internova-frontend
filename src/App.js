@@ -9,6 +9,8 @@ import {
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmailOtp from "./pages/VerifyEmailOtp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Internships from "./pages/Internships";
 import InternshipDetails from "./pages/InternshipDetails";
@@ -36,8 +38,16 @@ import AdminDashboard from "./pages/AdminDashboard";
 function AppLayout() {
   const location = useLocation();
 
-  const hideLayoutRoutes = ["/", "/register", "/verify-email-otp"];
-  const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
+  const hideLayoutRoutes = [
+    "/",
+    "/register",
+    "/verify-email-otp",
+    "/forgot-password",
+  ];
+
+  const shouldHideLayout =
+    hideLayoutRoutes.includes(location.pathname) ||
+    location.pathname.startsWith("/reset-password/");
 
   return (
     <>
@@ -47,6 +57,8 @@ function AppLayout() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email-otp" element={<VerifyEmailOtp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route
           path="/dashboard"
