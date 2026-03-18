@@ -1,273 +1,494 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import API from "../services/api";
 
 function Footer() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [subscribing, setSubscribing] = useState(false);
 
-  const handleSubscribe = (e) => {
-    e.preventDefault();
+  const token = localStorage.getItem("token");
 
-    if (!email.trim()) {
-      setMessage("Please enter your email address.");
-      return;
+  const quickLinks = useMemo(() => {
+    const baseLinks = [
+      { to: "/", label: "Home" },
+      { to: "/internships", label: "Programs" },
+      { to: "/verify", label: "Verify Certificate" },
+      { to: "/about", label: "About Us" },
+      { to: "/contact", label: "Contact Us" },
+      { to: "/privacy-policy", label: "Privacy Policy" },
+      { to: "/terms-and-conditions", label: "Terms & Conditions" },
+      { to: "/refund-policy", label: "Refund Policy" },
+    ];
+
+    if (token) {
+      return [
+        ...baseLinks,
+        { to: "/dashboard", label: "Dashboard" },
+        { to: "/my-purchases", label: "My Enrollments" },
+      ];
     }
 
-    setMessage("Thanks for subscribing to InternovaTech updates!");
-    setEmail("");
+    return [
+      ...baseLinks,
+      { to: "/login", label: "Login" },
+      { to: "/register", label: "Register" },
+    ];
+  }, [token]);
+
+  const showMessage = (type, text) => {
+    setMessageType(type);
+    setMessage(text);
 
     setTimeout(() => {
       setMessage("");
+      setMessageType("success");
     }, 3000);
+  };
+
+  const isValidEmail = (value) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+  };
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail) {
+      showMessage("error", "Please enter your email address.");
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      showMessage("error", "Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setSubscribing(true);
+
+      const { data } = await API.post("/subscribers", {
+        email: trimmedEmail,
+        source: "footer",
+      });
+
+      showMessage(
+        "success",
+        data?.message || "Thanks for subscribing to InternovaTech updates!"
+      );
+      setEmail("");
+    } catch (error) {
+      console.error("Subscribe failed:", error);
+
+      showMessage(
+        "error",
+        error?.response?.data?.message || "Failed to subscribe right now."
+      );
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   return (
     <>
       <style>{`
-        .internovatech-footer {
+        .footer-v60 {
           position: relative;
           overflow: hidden;
           background:
-            linear-gradient(135deg, #081226 0%, #0b1736 35%, #142850 70%, #1d4ed8 100%);
+            radial-gradient(circle at top left, rgba(59,130,246,0.14), transparent 24%),
+            radial-gradient(circle at 84% 18%, rgba(99,102,241,0.12), transparent 22%),
+            linear-gradient(135deg, #050d1e 0%, #081226 26%, #102247 62%, #1d4ed8 100%);
           color: #fff;
-          margin-top: 80px;
+          margin-top: 84px;
           border-top: 1px solid rgba(255,255,255,0.08);
         }
 
-        .internovatech-footer::before {
+        .footer-v60::before {
           content: "";
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(circle at 15% 20%, rgba(255,255,255,0.10), transparent 20%),
-            radial-gradient(circle at 85% 75%, rgba(255,255,255,0.08), transparent 18%);
+            radial-gradient(circle at 14% 18%, rgba(255,255,255,0.08), transparent 18%),
+            radial-gradient(circle at 86% 74%, rgba(255,255,255,0.05), transparent 18%),
+            repeating-linear-gradient(
+              90deg,
+              rgba(255,255,255,0.03) 0px,
+              rgba(255,255,255,0.03) 1px,
+              transparent 1px,
+              transparent 140px
+            );
           pointer-events: none;
         }
 
-        .internovatech-footer-shell {
+        .footer-v60-shell {
           position: relative;
           z-index: 2;
         }
 
-        .footer-top-card {
+        .footer-v60-topbar {
+          border-radius: 30px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          padding: 26px;
+          margin-bottom: 26px;
+          box-shadow: 0 18px 42px rgba(0,0,0,0.12);
+          -webkit-box-shadow: 0 18px 42px rgba(0,0,0,0.12);
+        }
+
+        .footer-v60-topbar-title {
+          font-size: 1.65rem;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          margin-bottom: 8px;
+          color: #fff;
+        }
+
+        .footer-v60-topbar-text {
+          color: rgba(255,255,255,0.76);
+          line-height: 1.85;
+          margin-bottom: 0;
+        }
+
+        .footer-v60-topbar-actions {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .footer-v60-btn-primary,
+        .footer-v60-btn-outline {
+          min-height: 52px;
+          padding: 0 20px;
+          border-radius: 16px;
+          font-weight: 800;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
+        }
+
+        .footer-v60-btn-primary {
+          color: #fff;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          border: none;
+          box-shadow: 0 16px 34px rgba(37,99,235,0.22);
+          -webkit-box-shadow: 0 16px 34px rgba(37,99,235,0.22);
+        }
+
+        .footer-v60-btn-primary:hover {
+          color: #fff;
+          transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
+        }
+
+        .footer-v60-btn-outline {
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.08);
+        }
+
+        .footer-v60-btn-outline:hover {
+          color: #fff;
+          background: rgba(255,255,255,0.12);
+          transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
+        }
+
+        .footer-v60-card {
+          height: 100%;
           border-radius: 28px;
           background: rgba(255,255,255,0.08);
           border: 1px solid rgba(255,255,255,0.12);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          padding: 24px;
-          -webkit-transition: all 0.35s ease;
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          padding: 26px;
           transition: all 0.35s ease;
-          height: 100%;
+          -webkit-transition: all 0.35s ease;
+          box-shadow: 0 18px 42px rgba(0,0,0,0.10);
+          -webkit-box-shadow: 0 18px 42px rgba(0,0,0,0.10);
+          overflow: hidden;
+          position: relative;
         }
 
-        .footer-top-card:hover {
-          transform: translateY(-4px);
-          -webkit-transform: translateY(-4px);
+        .footer-v60-card::after {
+          content: "";
+          position: absolute;
+          inset: auto auto 0 0;
+          width: 100%;
+          height: 3px;
+          background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+          opacity: 0.95;
+        }
+
+        .footer-v60-card:hover {
+          transform: translateY(-5px);
+          -webkit-transform: translateY(-5px);
           background: rgba(255,255,255,0.10);
+          box-shadow: 0 24px 56px rgba(0,0,0,0.14);
+          -webkit-box-shadow: 0 24px 56px rgba(0,0,0,0.14);
         }
 
-        .footer-brand-wrap {
+        .footer-v60-brand-wrap {
           display: flex;
           align-items: center;
           gap: 14px;
           margin-bottom: 18px;
         }
 
-        .footer-logo {
-          width: 52px;
-          height: 52px;
+        .footer-v60-logo {
+          width: 56px;
+          height: 56px;
           border-radius: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255,255,255,0.12);
-          border: 1px solid rgba(255,255,255,0.14);
+          background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.10) 100%);
+          border: 1px solid rgba(255,255,255,0.18);
           color: #fff;
-          font-size: 1.15rem;
-          font-weight: 800;
-          box-shadow: 0 12px 25px rgba(0,0,0,0.15);
-          -webkit-box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+          font-size: 1.2rem;
+          font-weight: 900;
+          box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+          -webkit-box-shadow: 0 12px 28px rgba(0,0,0,0.14);
           flex-shrink: 0;
         }
 
-        .footer-brand-title {
-          font-size: 1.5rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
+        .footer-v60-brand-title {
+          font-size: 1.55rem;
+          font-weight: 900;
+          letter-spacing: -0.03em;
           margin-bottom: 2px;
         }
 
-        .footer-brand-sub {
+        .footer-v60-brand-sub {
           color: rgba(255,255,255,0.70);
           font-size: 0.8rem;
           text-transform: uppercase;
           letter-spacing: 0.08em;
         }
 
-        .footer-text {
+        .footer-v60-text {
           color: rgba(255,255,255,0.78);
           line-height: 1.9;
           margin-bottom: 0;
         }
 
-        .footer-heading {
-          font-size: 1.05rem;
-          font-weight: 800;
+        .footer-v60-heading {
+          font-size: 1.08rem;
+          font-weight: 900;
           margin-bottom: 18px;
           color: #ffffff;
+          letter-spacing: -0.02em;
         }
 
-        .footer-links {
+        .footer-v60-links {
           list-style: none;
           padding: 0;
           margin: 0;
         }
 
-        .footer-links li {
+        .footer-v60-links li {
           margin-bottom: 12px;
         }
 
-        .footer-links a,
-        .footer-links span {
+        .footer-v60-links a,
+        .footer-v60-links span {
           color: rgba(255,255,255,0.78);
           text-decoration: none;
-          -webkit-transition: all 0.25s ease;
           transition: all 0.25s ease;
+          -webkit-transition: all 0.25s ease;
           line-height: 1.7;
         }
 
-        .footer-links a:hover {
+        .footer-v60-links a:hover {
           color: #ffffff;
           transform: translateX(4px);
           -webkit-transform: translateX(4px);
           display: inline-block;
         }
 
-        .footer-highlight-box {
+        .footer-v60-mini-badges {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 18px;
+        }
+
+        .footer-v60-mini-badge {
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.84);
+          font-size: 0.8rem;
+          font-weight: 700;
+          transition: all 0.28s ease;
+          -webkit-transition: all 0.28s ease;
+        }
+
+        .footer-v60-mini-badge:hover {
+          background: rgba(255,255,255,0.12);
+          transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
+        }
+
+        .footer-v60-info-box {
           border-radius: 22px;
           background: rgba(255,255,255,0.08);
           border: 1px solid rgba(255,255,255,0.12);
           padding: 18px;
           margin-bottom: 16px;
-          -webkit-transition: all 0.3s ease;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
         }
 
-        .footer-highlight-box:hover {
-          background: rgba(255,255,255,0.10);
+        .footer-v60-info-box:hover {
+          background: rgba(255,255,255,0.12);
           transform: translateY(-3px);
           -webkit-transform: translateY(-3px);
         }
 
-        .footer-highlight-title {
+        .footer-v60-info-title {
           font-size: 0.98rem;
-          font-weight: 800;
+          font-weight: 900;
           margin-bottom: 6px;
           color: #ffffff;
+          letter-spacing: -0.01em;
         }
 
-        .footer-highlight-text {
+        .footer-v60-info-text {
           color: rgba(255,255,255,0.74);
           margin-bottom: 0;
           line-height: 1.8;
           font-size: 0.94rem;
         }
 
-        .footer-subscribe-box {
-          border-radius: 28px;
+        .footer-v60-subscribe {
+          border-radius: 30px;
           background: rgba(255,255,255,0.08);
           border: 1px solid rgba(255,255,255,0.12);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           padding: 28px;
           margin-top: 28px;
+          box-shadow: 0 18px 42px rgba(0,0,0,0.10);
+          -webkit-box-shadow: 0 18px 42px rgba(0,0,0,0.10);
         }
 
-        .footer-subscribe-title {
-          font-size: 1.35rem;
-          font-weight: 800;
+        .footer-v60-subscribe-title {
+          font-size: 1.42rem;
+          font-weight: 900;
           margin-bottom: 8px;
           color: #ffffff;
+          letter-spacing: -0.02em;
         }
 
-        .footer-subscribe-text {
+        .footer-v60-subscribe-text {
           color: rgba(255,255,255,0.76);
           line-height: 1.8;
           margin-bottom: 18px;
         }
 
-        .footer-subscribe-form {
+        .footer-v60-subscribe-form {
           display: flex;
           gap: 12px;
           flex-wrap: wrap;
         }
 
-        .footer-input {
+        .footer-v60-input {
           flex: 1;
           min-width: 240px;
-          min-height: 54px;
-          border-radius: 16px;
+          min-height: 56px;
+          border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.16);
           background: rgba(255,255,255,0.10);
           color: #ffffff;
           padding: 0 16px;
           outline: none;
-          -webkit-transition: all 0.3s ease;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
         }
 
-        .footer-input::placeholder {
+        .footer-v60-input::placeholder {
           color: rgba(255,255,255,0.58);
         }
 
-        .footer-input:focus {
+        .footer-v60-input:focus {
           background: rgba(255,255,255,0.14);
           border-color: rgba(255,255,255,0.28);
           box-shadow: 0 0 0 4px rgba(255,255,255,0.08);
           -webkit-box-shadow: 0 0 0 4px rgba(255,255,255,0.08);
         }
 
-        .footer-subscribe-btn {
-          min-height: 54px;
+        .footer-v60-input:disabled {
+          opacity: 0.75;
+          cursor: not-allowed;
+        }
+
+        .footer-v60-subscribe-btn {
+          min-height: 56px;
           padding: 0 22px;
           border: none;
-          border-radius: 16px;
-          font-weight: 800;
+          border-radius: 18px;
+          font-weight: 900;
           color: #0f172a;
           background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
           box-shadow: 0 14px 30px rgba(255,255,255,0.14);
           -webkit-box-shadow: 0 14px 30px rgba(255,255,255,0.14);
-          -webkit-transition: all 0.3s ease;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
         }
 
-        .footer-subscribe-btn:hover {
+        .footer-v60-subscribe-btn:hover {
           transform: translateY(-2px);
           -webkit-transform: translateY(-2px);
         }
 
-        .footer-message {
+        .footer-v60-subscribe-btn:disabled {
+          opacity: 0.75;
+          cursor: not-allowed;
+          transform: none !important;
+          -webkit-transform: none !important;
+        }
+
+        .footer-v60-message {
           margin-top: 14px;
           font-weight: 700;
+        }
+
+        .footer-v60-message.success {
           color: #d1fae5;
         }
 
-        .internovatech-footer-bottom {
+        .footer-v60-message.error {
+          color: #fecaca;
+        }
+
+        .footer-v60-bottom {
           border-top: 1px solid rgba(255,255,255,0.10);
+          margin-top: 28px;
+          padding-top: 24px;
         }
 
-        .footer-copy {
+        .footer-v60-copy {
           color: rgba(255,255,255,0.72);
+          margin-bottom: 0;
         }
 
-        .footer-socials {
+        .footer-v60-socials {
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
         }
 
-        .footer-socials a {
+        .footer-v60-socials a {
           min-height: 42px;
           padding: 0 16px;
           display: inline-flex;
@@ -278,132 +499,164 @@ function Footer() {
           color: #ffffff;
           background: rgba(255,255,255,0.08);
           border: 1px solid rgba(255,255,255,0.12);
-          -webkit-transition: all 0.28s ease;
           transition: all 0.28s ease;
+          -webkit-transition: all 0.28s ease;
         }
 
-        .footer-socials a:hover {
+        .footer-v60-socials a:hover {
           transform: translateY(-2px);
           -webkit-transform: translateY(-2px);
           background: rgba(255,255,255,0.12);
           color: #ffffff;
         }
 
-        .footer-mini-badges {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 18px;
-        }
+        @media (max-width: 991px) {
+          .footer-v60-topbar {
+            padding: 22px;
+          }
 
-        .footer-mini-badge {
-          padding: 8px 12px;
-          border-radius: 999px;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.82);
-          font-size: 0.8rem;
-          font-weight: 700;
+          .footer-v60-topbar-actions {
+            justify-content: flex-start;
+            margin-top: 14px;
+          }
         }
 
         @media (max-width: 767px) {
-          .footer-subscribe-form {
+          .footer-v60-topbar,
+          .footer-v60-card,
+          .footer-v60-subscribe {
+            padding: 22px;
+            border-radius: 22px;
+          }
+
+          .footer-v60-subscribe-form {
             flex-direction: column;
           }
 
-          .footer-input,
-          .footer-subscribe-btn {
+          .footer-v60-input,
+          .footer-v60-subscribe-btn {
             width: 100%;
           }
 
-          .footer-brand-title {
-            font-size: 1.3rem;
+          .footer-v60-brand-title {
+            font-size: 1.34rem;
+          }
+
+          .footer-v60-topbar-title {
+            font-size: 1.35rem;
+          }
+
+          .footer-v60-subscribe-title {
+            font-size: 1.22rem;
           }
         }
       `}</style>
 
-      <footer className="internovatech-footer">
-        <div className="container py-5 internovatech-footer-shell">
+      <footer className="footer-v60">
+        <div className="container py-5 footer-v60-shell">
+          <div className="footer-v60-topbar">
+            <div className="row align-items-center g-4">
+              <div className="col-lg-8">
+                <h2 className="footer-v60-topbar-title">
+                  Build skills, track progress, and validate achievement with InternovaTech
+                </h2>
+                <p className="footer-v60-topbar-text">
+                  Explore premium online internship programs, complete guided learning,
+                  monitor progress, and access trusted certificate verification inside one
+                  polished digital platform.
+                </p>
+              </div>
+
+              <div className="col-lg-4">
+                <div className="footer-v60-topbar-actions">
+                  <Link to="/internships" className="footer-v60-btn-primary">
+                    Explore Programs
+                  </Link>
+                  <Link to="/verify" className="footer-v60-btn-outline">
+                    Verify Certificate
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="row g-4">
             <div className="col-lg-4">
-              <div className="footer-top-card">
-                <div className="footer-brand-wrap">
-                  <div className="footer-logo">I</div>
+              <div className="footer-v60-card">
+                <div className="footer-v60-brand-wrap">
+                  <div className="footer-v60-logo">I</div>
                   <div>
-                    <h4 className="footer-brand-title mb-0">InternovaTech</h4>
-                    <small className="footer-brand-sub">
+                    <h4 className="footer-v60-brand-title mb-0">InternovaTech</h4>
+                    <small className="footer-v60-brand-sub">
                       Online Internships & Certificate Platform
                     </small>
                   </div>
                 </div>
 
-                <p className="footer-text">
+                <p className="footer-v60-text">
                   InternovaTech helps students and learners access structured online
-                  internships, track progress, complete assessments, generate verified
-                  certificates, and build practical career-focused skills through a
-                  premium digital learning experience.
+                  internships, practical modules, progress tracking, mini assessments,
+                  and verified certificates through a premium SaaS-style learning experience.
                 </p>
 
-                <div className="footer-mini-badges">
-                  <span className="footer-mini-badge">Verified Certificates</span>
-                  <span className="footer-mini-badge">Online Internships</span>
-                  <span className="footer-mini-badge">Learning Progress</span>
+                <div className="footer-v60-mini-badges">
+                  <span className="footer-v60-mini-badge">Verified Certificates</span>
+                  <span className="footer-v60-mini-badge">Online Internships</span>
+                  <span className="footer-v60-mini-badge">Premium Dashboard</span>
+                  <span className="footer-v60-mini-badge">Practical Learning</span>
                 </div>
               </div>
             </div>
 
             <div className="col-lg-3 col-md-4">
-              <div className="footer-top-card">
-                <h5 className="footer-heading">Quick Links</h5>
-                <ul className="footer-links">
-                  <li><Link to="/">Home</Link></li>
-                  <li><Link to="/about">About Us</Link></li>
-                  <li><Link to="/contact">Contact Us</Link></li>
-                  <li><Link to="/verify">Verify Certificate</Link></li>
-                  <li><Link to="/privacy-policy">Privacy Policy</Link></li>
-                  <li><Link to="/terms-and-conditions">Terms & Conditions</Link></li>
-                  <li><Link to="/refund-policy">Refund Policy</Link></li>
-                  <li><Link to="/login">Login</Link></li>
-                  <li><Link to="/register">Register</Link></li>
+              <div className="footer-v60-card">
+                <h5 className="footer-v60-heading">Quick Links</h5>
+                <ul className="footer-v60-links">
+                  {quickLinks.map((item, index) => (
+                    <li key={`${item.to}-${index}`}>
+                      <Link to={item.to}>{item.label}</Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
 
             <div className="col-lg-2 col-md-4">
-              <div className="footer-top-card">
-                <h5 className="footer-heading">Programs</h5>
-                <ul className="footer-links">
+              <div className="footer-v60-card">
+                <h5 className="footer-v60-heading">Programs</h5>
+                <ul className="footer-v60-links">
                   <li><span>Web Development</span></li>
                   <li><span>AI & ML</span></li>
                   <li><span>Digital Marketing</span></li>
                   <li><span>Business Analytics</span></li>
                   <li><span>Data Science</span></li>
+                  <li><span>Finance</span></li>
                 </ul>
               </div>
             </div>
 
             <div className="col-lg-3 col-md-4">
-              <div className="footer-top-card">
-                <h5 className="footer-heading">Get in Touch</h5>
+              <div className="footer-v60-card">
+                <h5 className="footer-v60-heading">Get in Touch</h5>
 
-                <div className="footer-highlight-box">
-                  <h6 className="footer-highlight-title">Support</h6>
-                  <p className="footer-highlight-text">
-                    support@internovatech.com
+                <div className="footer-v60-info-box">
+                  <h6 className="footer-v60-info-title">Support</h6>
+                  <p className="footer-v60-info-text">
+                    internova.support@gmail.com
                   </p>
                 </div>
 
-                <div className="footer-highlight-box">
-                  <h6 className="footer-highlight-title">Message</h6>
-                  <p className="footer-highlight-text">
-                    We help with learning access, certificate verification,
-                    account support, and internship-related queries.
+                <div className="footer-v60-info-box">
+                  <h6 className="footer-v60-info-title">Message</h6>
+                  <p className="footer-v60-info-text">
+                    We help with internship access, verification support, account help,
+                    and learning-related questions.
                   </p>
                 </div>
 
-                <div className="footer-highlight-box mb-0">
-                  <h6 className="footer-highlight-title">Hours</h6>
-                  <p className="footer-highlight-text">
+                <div className="footer-v60-info-box mb-0">
+                  <h6 className="footer-v60-info-title">Hours</h6>
+                  <p className="footer-v60-info-text">
                     Mon - Sat • 9:00 AM to 6:00 PM
                   </p>
                 </div>
@@ -411,62 +664,69 @@ function Footer() {
             </div>
           </div>
 
-          <div className="footer-subscribe-box">
+          <div className="footer-v60-subscribe">
             <div className="row g-4 align-items-center">
               <div className="col-lg-7">
-                <h4 className="footer-subscribe-title">
-                  Subscribe for Updates & Opportunities
+                <h4 className="footer-v60-subscribe-title">
+                  Subscribe for updates and new opportunities
                 </h4>
-                <p className="footer-subscribe-text">
-                  Get internship program updates, new opportunities, platform
-                  announcements, and learning insights delivered to your inbox.
+                <p className="footer-v60-subscribe-text">
+                  Get program launches, learning updates, platform announcements,
+                  and career-focused insights directly in your inbox.
                 </p>
 
-                <form className="footer-subscribe-form" onSubmit={handleSubscribe}>
+                <form className="footer-v60-subscribe-form" onSubmit={handleSubscribe}>
                   <input
                     type="email"
-                    className="footer-input"
+                    className="footer-v60-input"
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={subscribing}
                   />
-                  <button type="submit" className="footer-subscribe-btn">
-                    Subscribe
+                  <button
+                    type="submit"
+                    className="footer-v60-subscribe-btn"
+                    disabled={subscribing}
+                  >
+                    {subscribing ? "Subscribing..." : "Subscribe"}
                   </button>
                 </form>
 
-                {message && <div className="footer-message">{message}</div>}
+                {message && (
+                  <div className={`footer-v60-message ${messageType}`}>
+                    {message}
+                  </div>
+                )}
               </div>
 
               <div className="col-lg-5">
-                <div className="footer-highlight-box">
-                  <h6 className="footer-highlight-title">Need Help Fast?</h6>
-                  <p className="footer-highlight-text">
-                    Use InternovaTech to explore internship programs, track learning
-                    progress, attempt assessments, and verify official certificates.
+                <div className="footer-v60-info-box">
+                  <h6 className="footer-v60-info-title">Need Help Fast?</h6>
+                  <p className="footer-v60-info-text">
+                    Use InternovaTech to explore programs, track progress,
+                    complete learning stages, and verify official certificates.
                   </p>
                 </div>
 
-                <div className="footer-highlight-box mb-0">
-                  <h6 className="footer-highlight-title">
-                    Secure Learning Access
-                  </h6>
-                  <p className="footer-highlight-text">
-                    Premium dashboard access, certificate generation, verification
-                    support, and structured progress tracking in one place.
+                <div className="footer-v60-info-box mb-0">
+                  <h6 className="footer-v60-info-title">Premium Learning Flow</h6>
+                  <p className="footer-v60-info-text">
+                    Clean UX, practical structure, verified completion workflow,
+                    and a more trusted learner experience in one platform.
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="internovatech-footer-bottom mt-4 pt-4">
+          <div className="footer-v60-bottom">
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-              <p className="mb-0 footer-copy">
+              <p className="footer-v60-copy">
                 © 2026 InternovaTech. All rights reserved.
               </p>
 
-              <div className="footer-socials">
+              <div className="footer-v60-socials">
                 <a href="/" onClick={(e) => e.preventDefault()}>LinkedIn</a>
                 <a href="/" onClick={(e) => e.preventDefault()}>GitHub</a>
                 <a href="/" onClick={(e) => e.preventDefault()}>Instagram</a>

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import API from "../services/api";
 import {
   FaThLarge,
   FaLayerGroup,
@@ -13,21 +14,40 @@ import {
   FaInfoCircle,
   FaEnvelope,
   FaHome,
+  FaBell,
+  FaTimes,
+  FaUserCog,
 } from "react-icons/fa";
 import { HiMiniBars3BottomRight } from "react-icons/hi2";
 
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [search, setSearch] = useState("");
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const notificationRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const user = JSON.parse(localStorage.getItem("user") || "null");
   const token = localStorage.getItem("token");
+  const isAdmin = user?.role === "admin";
+
+  const closeMobileMenu = () => {
+    setMenuOpen(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("pendingVerificationEmail");
+    closeMobileMenu();
+    setNotificationsOpen(false);
     navigate("/login");
   };
 
@@ -36,6 +56,7 @@ function Navbar() {
 
     if (!search.trim()) return;
 
+    closeMobileMenu();
     navigate(`/internships?search=${encodeURIComponent(search.trim())}`);
     setSearch("");
   };
@@ -43,49 +64,161 @@ function Navbar() {
   const isActive = (path) => {
     if (path === "/") return location.pathname === "/";
     if (path === "/dashboard") return location.pathname === "/dashboard";
-    if (path === "/internships") return location.pathname.startsWith("/internships");
-    if (path === "/my-purchases") return location.pathname.startsWith("/my-purchases");
+    if (path === "/internships")
+      return location.pathname.startsWith("/internships");
+    if (path === "/my-purchases")
+      return location.pathname.startsWith("/my-purchases");
     if (path === "/verify") return location.pathname.startsWith("/verify");
     if (path === "/about") return location.pathname === "/about";
     if (path === "/contact") return location.pathname === "/contact";
+    if (path === "/admin/dashboard")
+      return location.pathname.startsWith("/admin/dashboard");
     return false;
   };
+
+  const formatDateTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const fetchNotifications = async () => {
+    if (!token) return;
+
+    try {
+      setNotificationsLoading(true);
+      const { data } = await API.get("/auth/notifications");
+      const items = data?.notifications || [];
+      setNotifications(items);
+      setUnreadCount(items.filter((item) => !item.read).length);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const markNotificationsAsRead = async () => {
+    try {
+      await API.patch("/auth/notifications/read-all");
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          read: true,
+        }))
+      );
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark notifications as read:", error);
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    const nextState = !notificationsOpen;
+    setNotificationsOpen(nextState);
+
+    if (nextState) {
+      await fetchNotifications();
+      if (unreadCount > 0) {
+        await markNotificationsAsRead();
+      }
+    }
+  };
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setNotificationsOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (token) {
+      fetchNotifications();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setNotificationsOpen(false);
+      }
+
+      if (
+        window.innerWidth <= 991 &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
+        const clickedToggler = event.target.closest(".internovatech-toggler");
+        if (!clickedToggler) {
+          setMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const notificationPreview = useMemo(() => {
+    return notifications.slice(0, 6);
+  }, [notifications]);
 
   return (
     <>
       <style>{`
         .internovatech-navbar {
-          background: rgba(255, 255, 255, 0.80);
+          background: rgba(255, 255, 255, 0.88);
           backdrop-filter: blur(18px);
           -webkit-backdrop-filter: blur(18px);
           border-bottom: 1px solid rgba(226, 232, 240, 0.92);
           box-shadow: 0 10px 35px rgba(15, 23, 42, 0.06);
+          -webkit-box-shadow: 0 10px 35px rgba(15, 23, 42, 0.06);
           padding-top: 10px;
           padding-bottom: 10px;
           z-index: 1100;
         }
 
         .internovatech-navbar .container {
-          max-width: 1360px;
+          max-width: 1440px;
         }
 
         .internovatech-navbar-shell {
+          width: 100%;
+        }
+
+        .internovatech-navbar-top {
           display: flex;
           align-items: center;
-          gap: 12px;
+          justify-content: space-between;
+          gap: 14px;
           width: 100%;
         }
 
         .internovatech-brand {
           text-decoration: none;
           min-width: 0;
-          flex-shrink: 0;
-          margin-right: 6px;
+          flex-shrink: 1;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
         }
 
         .internovatech-brand:hover {
           transform: translateY(-1px);
+          -webkit-transform: translateY(-1px);
         }
 
         .internovatech-brand-wrap {
@@ -107,6 +240,9 @@ function Navbar() {
           font-weight: 800;
           font-size: 1.05rem;
           box-shadow:
+            0 14px 28px rgba(29, 78, 216, 0.22),
+            0 6px 14px rgba(11, 23, 54, 0.18);
+          -webkit-box-shadow:
             0 14px 28px rgba(29, 78, 216, 0.22),
             0 6px 14px rgba(11, 23, 54, 0.18);
           flex-shrink: 0;
@@ -136,47 +272,149 @@ function Navbar() {
           white-space: nowrap;
         }
 
+        .internovatech-top-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+
+        .internovatech-notification-wrap {
+          position: relative;
+        }
+
+        .internovatech-notification-btn,
         .internovatech-toggler {
           border: 1px solid #dbe3f0;
           border-radius: 14px;
-          padding: 9px 11px;
+          width: 46px;
+          height: 46px;
           box-shadow: none !important;
           background: rgba(255,255,255,0.96);
           transition: all 0.25s ease;
-          flex-shrink: 0;
-          margin-left: auto;
-        }
-
-        .internovatech-toggler:hover {
-          background: #f8fafc;
-          transform: translateY(-1px);
-        }
-
-        .internovatech-toggler:focus {
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
-        }
-
-        .internovatech-toggler-icon-wrap {
+          -webkit-transition: all 0.25s ease;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           color: #0f172a;
-          font-size: 1.15rem;
-          line-height: 1;
+          position: relative;
+          flex-shrink: 0;
         }
 
-        .navbar-collapse {
-          min-width: 0;
-          flex: 1;
+        .internovatech-notification-btn:hover,
+        .internovatech-toggler:hover {
+          background: #f8fafc;
+          transform: translateY(-1px);
+          -webkit-transform: translateY(-1px);
+        }
+
+        .internovatech-toggler:focus,
+        .internovatech-notification-btn:focus {
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+        }
+
+        .internovatech-notification-badge {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          min-width: 20px;
+          height: 20px;
+          border-radius: 999px;
+          background: #ef4444;
+          color: #fff;
+          font-size: 0.72rem;
+          font-weight: 800;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 5px;
+          border: 2px solid #fff;
+        }
+
+        .internovatech-notification-dropdown {
+          position: absolute;
+          top: calc(100% + 12px);
+          right: 0;
+          width: 340px;
+          max-width: calc(100vw - 24px);
+          background: rgba(255,255,255,0.98);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          border: 1px solid rgba(226, 232, 240, 0.92);
+          border-radius: 22px;
+          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+          -webkit-box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+          padding: 14px;
+          z-index: 1200;
+        }
+
+        .internovatech-notification-title {
+          font-size: 0.98rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 12px;
+        }
+
+        .internovatech-notification-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-height: 360px;
+          overflow-y: auto;
+        }
+
+        .internovatech-notification-item {
+          border-radius: 16px;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          padding: 12px;
+        }
+
+        .internovatech-notification-item.unread {
+          background: #eff6ff;
+          border-color: #bfdbfe;
+        }
+
+        .internovatech-notification-item-title {
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin-bottom: 4px;
+        }
+
+        .internovatech-notification-item-text {
+          font-size: 0.84rem;
+          line-height: 1.6;
+          color: #64748b;
+          margin-bottom: 4px;
+          word-break: break-word;
+        }
+
+        .internovatech-notification-time {
+          font-size: 0.76rem;
+          color: #94a3b8;
+        }
+
+        .internovatech-navbar-collapse {
+          width: 100%;
+          margin-top: 12px;
         }
 
         .internovatech-navbar-content {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 14px;
+          width: 100%;
+          min-width: 0;
+        }
+
+        .internovatech-left-zone {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 12px;
+          gap: 10px;
           min-width: 0;
-          width: 100%;
+          overflow: hidden;
         }
 
         .internovatech-nav-list {
@@ -185,34 +423,42 @@ function Navbar() {
           gap: 4px;
           min-width: 0;
           flex-wrap: nowrap;
-          margin-right: 0;
-          flex-shrink: 1;
+          overflow: hidden;
+          flex: 1 1 auto;
+          margin: 0;
+          padding: 0;
+          list-style: none;
         }
 
         .internovatech-link {
           position: relative;
           color: #475569 !important;
           font-weight: 700;
-          padding: 9px 12px !important;
+          padding: 9px 10px !important;
           border-radius: 14px;
           transition: all 0.28s ease;
+          -webkit-transition: all 0.28s ease;
           white-space: nowrap;
           display: inline-flex !important;
           align-items: center;
           gap: 8px;
-          font-size: 0.98rem;
+          font-size: 0.94rem;
+          flex-shrink: 0;
+          text-decoration: none !important;
         }
 
         .internovatech-link:hover {
           color: #0f172a !important;
           background: #f8fafc;
           transform: translateY(-1px);
+          -webkit-transform: translateY(-1px);
         }
 
         .internovatech-link.active {
           color: #0f172a !important;
           background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
           box-shadow: inset 0 0 0 1px #dbeafe;
+          -webkit-box-shadow: inset 0 0 0 1px #dbeafe;
         }
 
         .internovatech-nav-icon {
@@ -220,22 +466,30 @@ function Navbar() {
           color: #2563eb;
           flex-shrink: 0;
           transition: all 0.28s ease;
+          -webkit-transition: all 0.28s ease;
         }
 
         .internovatech-link:hover .internovatech-nav-icon,
         .internovatech-link.active .internovatech-nav-icon {
           color: #0f172a;
           transform: scale(1.06);
+          -webkit-transform: scale(1.06);
+        }
+
+        .internovatech-public-links {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          flex-shrink: 0;
         }
 
         .internovatech-right-zone {
           display: flex;
           align-items: center;
+          justify-content: flex-end;
           gap: 10px;
           min-width: 0;
-          flex-wrap: nowrap;
-          margin-left: auto;
-          flex-shrink: 1;
+          flex-shrink: 0;
         }
 
         .internovatech-search-wrap {
@@ -246,17 +500,19 @@ function Navbar() {
           border-radius: 18px;
           padding: 4px;
           min-height: 52px;
-          width: 280px;
-          max-width: 280px;
+          width: 248px;
+          max-width: 248px;
           min-width: 0;
-          flex-shrink: 1;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
+          flex-shrink: 1;
         }
 
         .internovatech-search-wrap:focus-within {
           background: #ffffff;
           border-color: #60a5fa;
           box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+          -webkit-box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
         }
 
         .internovatech-search {
@@ -278,7 +534,7 @@ function Navbar() {
         .internovatech-search-btn {
           border: none;
           min-height: 42px;
-          padding: 0 16px;
+          padding: 0 14px;
           border-radius: 14px;
           font-weight: 800;
           color: #fff;
@@ -286,7 +542,11 @@ function Navbar() {
           box-shadow:
             0 12px 25px rgba(29, 78, 216, 0.18),
             0 6px 14px rgba(11, 23, 54, 0.14);
+          -webkit-box-shadow:
+            0 12px 25px rgba(29, 78, 216, 0.18),
+            0 6px 14px rgba(11, 23, 54, 0.14);
           transition: all 0.28s ease;
+          -webkit-transition: all 0.28s ease;
           white-space: nowrap;
           flex-shrink: 0;
           display: inline-flex;
@@ -296,6 +556,7 @@ function Navbar() {
 
         .internovatech-search-btn:hover {
           transform: translateY(-1px);
+          -webkit-transform: translateY(-1px);
         }
 
         .internovatech-search-btn-icon {
@@ -307,7 +568,7 @@ function Navbar() {
           align-items: center;
           gap: 10px;
           min-width: 0;
-          flex-shrink: 1;
+          flex-shrink: 0;
         }
 
         .internovatech-user-pill {
@@ -315,7 +576,7 @@ function Navbar() {
           align-items: center;
           gap: 8px;
           min-height: 42px;
-          max-width: 180px;
+          max-width: 130px;
           min-width: 0;
           padding: 0 14px;
           border-radius: 999px;
@@ -324,13 +585,16 @@ function Navbar() {
           font-weight: 800;
           border: 1px solid #dbeafe;
           overflow: hidden;
-          flex-shrink: 1;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
+          flex-shrink: 0;
         }
 
         .internovatech-user-pill:hover {
           transform: translateY(-1px);
+          -webkit-transform: translateY(-1px);
           box-shadow: 0 10px 22px rgba(37, 99, 235, 0.10);
+          -webkit-box-shadow: 0 10px 22px rgba(37, 99, 235, 0.10);
         }
 
         .internovatech-user-icon {
@@ -349,25 +613,33 @@ function Navbar() {
 
         .internovatech-logout-btn,
         .internovatech-auth-btn,
-        .internovatech-auth-outline-btn {
+        .internovatech-auth-outline-btn,
+        .internovatech-admin-btn {
           min-height: 44px;
           padding: 0 16px;
           border-radius: 16px;
           font-weight: 800;
           transition: all 0.3s ease;
+          -webkit-transition: all 0.3s ease;
           white-space: nowrap;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
+          flex-shrink: 0;
+          text-decoration: none !important;
         }
 
         .internovatech-logout-btn,
-        .internovatech-auth-btn {
+        .internovatech-auth-btn,
+        .internovatech-admin-btn {
           border: none;
           color: #fff;
           background: linear-gradient(135deg, #0b1736 0%, #142850 40%, #1d4ed8 100%);
           box-shadow:
+            0 12px 25px rgba(29, 78, 216, 0.18),
+            0 6px 14px rgba(11, 23, 54, 0.14);
+          -webkit-box-shadow:
             0 12px 25px rgba(29, 78, 216, 0.18),
             0 6px 14px rgba(11, 23, 54, 0.14);
         }
@@ -377,12 +649,15 @@ function Navbar() {
           background: rgba(255,255,255,0.7);
           color: #0f172a;
           backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
         }
 
         .internovatech-logout-btn:hover,
         .internovatech-auth-btn:hover,
-        .internovatech-auth-outline-btn:hover {
+        .internovatech-auth-outline-btn:hover,
+        .internovatech-admin-btn:hover {
           transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
         }
 
         .internovatech-btn-icon {
@@ -390,77 +665,113 @@ function Navbar() {
           flex-shrink: 0;
         }
 
+        .internovatech-mobile-auth {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
         @media (min-width: 992px) {
           .internovatech-toggler {
             display: none !important;
           }
 
-          .navbar-collapse {
-            display: flex !important;
-            flex-basis: auto;
+          .internovatech-navbar-collapse {
+            display: block !important;
+          }
+
+          .internovatech-mobile-admin-link {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 1499px) {
+          .internovatech-search-wrap {
+            width: 225px;
+            max-width: 225px;
           }
         }
 
         @media (max-width: 1399px) {
           .internovatech-search-wrap {
-            width: 255px;
-            max-width: 255px;
+            width: 205px;
+            max-width: 205px;
           }
 
           .internovatech-user-pill {
-            max-width: 160px;
-          }
-        }
-
-        @media (max-width: 1199px) {
-          .internovatech-search-wrap {
-            width: 220px;
-            max-width: 220px;
-          }
-
-          .internovatech-user-pill {
-            max-width: 145px;
+            max-width: 108px;
           }
 
           .internovatech-link {
-            padding: 9px 10px !important;
-            font-size: 0.95rem;
+            padding: 9px 8px !important;
+            font-size: 0.9rem;
+            gap: 6px;
+          }
+        }
+
+        @media (max-width: 1279px) {
+          .internovatech-search-wrap {
+            width: 184px;
+            max-width: 184px;
           }
 
-          .internovatech-navbar-content {
-            gap: 10px;
+          .internovatech-search-btn span {
+            display: none;
           }
 
-          .internovatech-nav-list {
-            gap: 2px;
+          .internovatech-search-btn {
+            padding: 0 13px;
+          }
+
+          .internovatech-link {
+            font-size: 0.87rem;
+          }
+
+          .internovatech-user-pill {
+            max-width: 96px;
+          }
+
+          .brand-main {
+            font-size: 1rem;
+          }
+
+          .brand-sub {
+            font-size: 0.66rem;
+          }
+        }
+
+        @media (max-width: 1180px) {
+          .internovatech-public-links {
+            display: none;
           }
         }
 
         @media (max-width: 991px) {
-          .internovatech-navbar-shell {
-            display: block;
-          }
-
-          .internovatech-navbar-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            width: 100%;
-          }
-
-          .navbar-collapse {
+          .internovatech-navbar-collapse {
+            display: none;
             margin-top: 14px;
             padding-top: 14px;
             border-top: 1px solid #e2e8f0;
             width: 100%;
           }
 
-          .internovatech-navbar-content {
+          .internovatech-navbar-collapse.mobile-open {
+            display: block;
+          }
+
+          .internovatech-navbar-content,
+          .internovatech-left-zone,
+          .internovatech-public-links,
+          .internovatech-right-zone {
+            display: flex;
             flex-direction: column;
             align-items: stretch;
             gap: 14px;
             width: 100%;
+          }
+
+          .internovatech-left-zone {
+            overflow: visible;
           }
 
           .internovatech-nav-list {
@@ -468,20 +779,18 @@ function Navbar() {
             flex-direction: column;
             align-items: stretch !important;
             gap: 8px;
+            overflow: visible;
           }
 
           .internovatech-link {
             width: 100%;
             justify-content: flex-start;
             padding: 12px 14px !important;
+            font-size: 0.96rem;
           }
 
-          .internovatech-right-zone {
-            flex-direction: column;
-            align-items: stretch;
-            width: 100%;
-            margin-left: 0;
-            gap: 12px;
+          .internovatech-public-links {
+            display: flex;
           }
 
           .internovatech-search-wrap {
@@ -489,7 +798,12 @@ function Navbar() {
             max-width: 100%;
           }
 
-          .internovatech-user-actions {
+          .internovatech-search-btn span {
+            display: inline;
+          }
+
+          .internovatech-user-actions,
+          .internovatech-mobile-auth {
             width: 100%;
             flex-direction: column;
             align-items: stretch;
@@ -499,10 +813,21 @@ function Navbar() {
           .internovatech-user-pill,
           .internovatech-logout-btn,
           .internovatech-auth-btn,
-          .internovatech-auth-outline-btn {
+          .internovatech-auth-outline-btn,
+          .internovatech-admin-btn {
             width: 100%;
             max-width: 100%;
             justify-content: center;
+          }
+
+          .internovatech-notification-dropdown {
+            right: 0;
+            left: auto;
+            width: min(340px, calc(100vw - 24px));
+          }
+
+          .internovatech-desktop-admin-link {
+            display: none !important;
           }
         }
 
@@ -524,6 +849,10 @@ function Navbar() {
           .internovatech-brand-wrap {
             gap: 9px;
           }
+
+          .internovatech-notification-dropdown {
+            width: min(320px, calc(100vw - 20px));
+          }
         }
 
         @media (max-width: 575px) {
@@ -544,118 +873,234 @@ function Navbar() {
             height: 40px;
             border-radius: 13px;
           }
+
+          .internovatech-top-actions {
+            gap: 8px;
+          }
+
+          .internovatech-notification-btn,
+          .internovatech-toggler {
+            width: 42px;
+            height: 42px;
+            border-radius: 13px;
+          }
         }
       `}</style>
 
-      <nav className="navbar navbar-expand-lg internovatech-navbar sticky-top">
+      <nav className="navbar internovatech-navbar sticky-top">
         <div className="container">
-          <div className="internovatech-navbar-shell w-100">
+          <div className="internovatech-navbar-shell w-100" ref={menuRef}>
             <div className="internovatech-navbar-top">
               <Link className="navbar-brand internovatech-brand" to="/">
                 <div className="internovatech-brand-wrap">
                   <div className="internovatech-logo-circle">I</div>
                   <div className="internovatech-brand-text">
                     <span className="brand-main">InternovaTech</span>
-                    <span className="brand-sub d-block">Online Internships Platform</span>
+                    <span className="brand-sub d-block">
+                      Online Internships Platform
+                    </span>
                   </div>
                 </div>
               </Link>
 
-              <button
-                className="navbar-toggler internovatech-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#internovatechNavbar"
-                aria-controls="internovatechNavbar"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
-              >
-                <span className="internovatech-toggler-icon-wrap">
-                  <HiMiniBars3BottomRight />
-                </span>
-              </button>
+              <div className="internovatech-top-actions">
+                {token && (
+                  <div
+                    className="internovatech-notification-wrap"
+                    ref={notificationRef}
+                  >
+                    <button
+                      type="button"
+                      className="internovatech-notification-btn"
+                      onClick={handleToggleNotifications}
+                      aria-label="Notifications"
+                    >
+                      <FaBell />
+                      {unreadCount > 0 && (
+                        <span className="internovatech-notification-badge">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </button>
+
+                    {notificationsOpen && (
+                      <div className="internovatech-notification-dropdown">
+                        <div className="internovatech-notification-title">
+                          Notifications
+                        </div>
+
+                        <div className="internovatech-notification-list">
+                          {notificationsLoading ? (
+                            <div className="internovatech-notification-item">
+                              <div className="internovatech-notification-item-text">
+                                Loading notifications...
+                              </div>
+                            </div>
+                          ) : notificationPreview.length > 0 ? (
+                            notificationPreview.map((item) => (
+                              <div
+                                key={item._id}
+                                className={`internovatech-notification-item ${
+                                  item.read ? "" : "unread"
+                                }`}
+                              >
+                                <div className="internovatech-notification-item-title">
+                                  {item.title || "Notification"}
+                                </div>
+                                <div className="internovatech-notification-item-text">
+                                  {item.message || "No message"}
+                                </div>
+                                <div className="internovatech-notification-time">
+                                  {formatDateTime(item.createdAt)}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="internovatech-notification-item">
+                              <div className="internovatech-notification-item-text">
+                                No notifications yet.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  className="internovatech-toggler"
+                  type="button"
+                  onClick={() => setMenuOpen((prev) => !prev)}
+                  aria-label="Toggle navigation"
+                  aria-expanded={menuOpen}
+                >
+                  {menuOpen ? <FaTimes /> : <HiMiniBars3BottomRight />}
+                </button>
+              </div>
             </div>
 
-            <div className="collapse navbar-collapse" id="internovatechNavbar">
+            <div
+              className={`internovatech-navbar-collapse ${
+                menuOpen ? "mobile-open" : ""
+              }`}
+            >
               <div className="internovatech-navbar-content">
-                <ul className="navbar-nav internovatech-nav-list mb-2 mb-lg-0 align-items-lg-center">
-                  <li className="nav-item">
-                    <Link
-                      className={`nav-link internovatech-link ${isActive("/") ? "active" : ""}`}
-                      to="/"
-                    >
-                      <FaHome className="internovatech-nav-icon" />
-                      <span>Home</span>
-                    </Link>
-                  </li>
-
-                  {token && (
+                <div className="internovatech-left-zone">
+                  <ul className="internovatech-nav-list">
                     <li className="nav-item">
                       <Link
-                        className={`nav-link internovatech-link ${isActive("/dashboard") ? "active" : ""}`}
-                        to="/dashboard"
+                        className={`internovatech-link ${
+                          isActive("/") ? "active" : ""
+                        }`}
+                        to="/"
+                        onClick={closeMobileMenu}
                       >
-                        <FaThLarge className="internovatech-nav-icon" />
-                        <span>Dashboard</span>
+                        <FaHome className="internovatech-nav-icon" />
+                        <span>Home</span>
                       </Link>
                     </li>
-                  )}
 
-                  <li className="nav-item">
-                    <Link
-                      className={`nav-link internovatech-link ${isActive("/internships") ? "active" : ""}`}
-                      to="/internships"
-                    >
-                      <FaLayerGroup className="internovatech-nav-icon" />
-                      <span>Programs</span>
-                    </Link>
-                  </li>
+                    {token && (
+                      <li className="nav-item">
+                        <Link
+                          className={`internovatech-link ${
+                            isActive("/dashboard") ? "active" : ""
+                          }`}
+                          to="/dashboard"
+                          onClick={closeMobileMenu}
+                        >
+                          <FaThLarge className="internovatech-nav-icon" />
+                          <span>Dashboard</span>
+                        </Link>
+                      </li>
+                    )}
 
-                  {token && (
                     <li className="nav-item">
                       <Link
-                        className={`nav-link internovatech-link ${isActive("/my-purchases") ? "active" : ""}`}
-                        to="/my-purchases"
+                        className={`internovatech-link ${
+                          isActive("/internships") ? "active" : ""
+                        }`}
+                        to="/internships"
+                        onClick={closeMobileMenu}
                       >
-                        <FaClipboardCheck className="internovatech-nav-icon" />
-                        <span>My Enrollments</span>
+                        <FaLayerGroup className="internovatech-nav-icon" />
+                        <span>Programs</span>
                       </Link>
                     </li>
-                  )}
 
-                  <li className="nav-item">
-                    <Link
-                      className={`nav-link internovatech-link ${isActive("/verify") ? "active" : ""}`}
-                      to="/verify"
-                    >
-                      <FaShieldAlt className="internovatech-nav-icon" />
-                      <span>Verify</span>
-                    </Link>
-                  </li>
+                    {token && (
+                      <li className="nav-item">
+                        <Link
+                          className={`internovatech-link ${
+                            isActive("/my-purchases") ? "active" : ""
+                          }`}
+                          to="/my-purchases"
+                          onClick={closeMobileMenu}
+                        >
+                          <FaClipboardCheck className="internovatech-nav-icon" />
+                          <span>My Enrollments</span>
+                        </Link>
+                      </li>
+                    )}
 
-                  <li className="nav-item">
+                    <li className="nav-item">
+                      <Link
+                        className={`internovatech-link ${
+                          isActive("/verify") ? "active" : ""
+                        }`}
+                        to="/verify"
+                        onClick={closeMobileMenu}
+                      >
+                        <FaShieldAlt className="internovatech-nav-icon" />
+                        <span>Verify</span>
+                      </Link>
+                    </li>
+                  </ul>
+
+                  <div className="internovatech-public-links">
                     <Link
-                      className={`nav-link internovatech-link ${isActive("/about") ? "active" : ""}`}
+                      className={`internovatech-link ${
+                        isActive("/about") ? "active" : ""
+                      }`}
                       to="/about"
+                      onClick={closeMobileMenu}
                     >
                       <FaInfoCircle className="internovatech-nav-icon" />
                       <span>About</span>
                     </Link>
-                  </li>
 
-                  <li className="nav-item">
                     <Link
-                      className={`nav-link internovatech-link ${isActive("/contact") ? "active" : ""}`}
+                      className={`internovatech-link ${
+                        isActive("/contact") ? "active" : ""
+                      }`}
                       to="/contact"
+                      onClick={closeMobileMenu}
                     >
                       <FaEnvelope className="internovatech-nav-icon" />
                       <span>Contact</span>
                     </Link>
-                  </li>
-                </ul>
+
+                    {isAdmin && (
+                      <Link
+                        className={`internovatech-link internovatech-mobile-admin-link ${
+                          isActive("/admin/dashboard") ? "active" : ""
+                        }`}
+                        to="/admin/dashboard"
+                        onClick={closeMobileMenu}
+                      >
+                        <FaUserCog className="internovatech-nav-icon" />
+                        <span>Admin</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
 
                 <div className="internovatech-right-zone">
-                  <form className="internovatech-search-wrap" onSubmit={handleSearch}>
+                  <form
+                    className="internovatech-search-wrap"
+                    onSubmit={handleSearch}
+                  >
                     <input
                       type="text"
                       className="internovatech-search"
@@ -671,6 +1116,17 @@ function Navbar() {
 
                   {token ? (
                     <div className="internovatech-user-actions">
+                      {isAdmin && (
+                        <Link
+                          to="/admin/dashboard"
+                          className="internovatech-admin-btn internovatech-desktop-admin-link"
+                          onClick={closeMobileMenu}
+                        >
+                          <FaUserCog className="internovatech-btn-icon" />
+                          <span>Admin</span>
+                        </Link>
+                      )}
+
                       <span
                         className="internovatech-user-pill"
                         title={user?.name || "User"}
@@ -684,20 +1140,27 @@ function Navbar() {
                       <button
                         className="btn internovatech-logout-btn"
                         onClick={handleLogout}
+                        type="button"
                       >
                         <FaSignOutAlt className="internovatech-btn-icon" />
                         <span>Logout</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="d-flex gap-2 flex-column flex-sm-row">
-                      <Link to="/login" className="btn internovatech-auth-btn">
+                    <div className="internovatech-mobile-auth">
+                      <Link
+                        to="/login"
+                        className="internovatech-auth-btn"
+                        onClick={closeMobileMenu}
+                      >
                         <FaSignInAlt className="internovatech-btn-icon" />
                         <span>Login</span>
                       </Link>
+
                       <Link
                         to="/register"
-                        className="btn internovatech-auth-outline-btn"
+                        className="internovatech-auth-outline-btn"
+                        onClick={closeMobileMenu}
                       >
                         <FaUserPlus className="internovatech-btn-icon" />
                         <span>Register</span>

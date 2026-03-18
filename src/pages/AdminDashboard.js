@@ -33,11 +33,36 @@ function AdminDashboard() {
     failedPurchases: 0,
     totalCertificatesIssued: 0,
     totalQuizPassed: 0,
+    totalSubscribers: 0,
+    totalUnreadContactMessages: 0,
   });
 
   const [recentInternships, setRecentInternships] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentPurchases, setRecentPurchases] = useState([]);
+  const [recentMessages, setRecentMessages] = useState([]);
+
+  const [subscribers, setSubscribers] = useState([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(false);
+  const [subscriberSearch, setSubscriberSearch] = useState("");
+  const [subscribersPage, setSubscribersPage] = useState(1);
+  const subscribersLimit = 10;
+  const [subscribersTotalPages, setSubscribersTotalPages] = useState(1);
+  const [subscribersTotal, setSubscribersTotal] = useState(0);
+
+  const [contactMessages, setContactMessages] = useState([]);
+  const [contactMessagesLoading, setContactMessagesLoading] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactStatusFilter, setContactStatusFilter] = useState("All");
+  const [contactDateFrom, setContactDateFrom] = useState("");
+  const [contactDateTo, setContactDateTo] = useState("");
+  const [contactPage, setContactPage] = useState(1);
+  const contactLimit = 10;
+  const [contactTotalPages, setContactTotalPages] = useState(1);
+  const [contactTotal, setContactTotal] = useState(0);
+
+  const [replyingMessageId, setReplyingMessageId] = useState("");
+  const [replyMessage, setReplyMessage] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -64,6 +89,7 @@ function AdminDashboard() {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
+  const [selectedContactMessage, setSelectedContactMessage] = useState(null);
 
   const [toast, setToast] = useState({
     show: false,
@@ -72,6 +98,10 @@ function AdminDashboard() {
   });
 
   const PIE_COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#7c3aed"];
+
+  useEffect(() => {
+    document.title = "Admin Dashboard | InternovaTech";
+  }, []);
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -144,6 +174,7 @@ function AdminDashboard() {
         "Last Login",
         "Purchases Count",
         "Certificates Count",
+        "Unread Notifications",
       ],
       ...recentUsers.map((user) => [
         user.name || "",
@@ -154,10 +185,11 @@ function AdminDashboard() {
         formatDateTime(user.lastLoginAt),
         user.purchasesCount || 0,
         user.certificatesCount || 0,
+        user.unreadNotifications || 0,
       ]),
     ];
 
-    downloadCsv(rows, "internova_users_export.csv");
+    downloadCsv(rows, "internovatech_users_export.csv");
   };
 
   const exportPurchasesCsv = () => {
@@ -198,13 +230,45 @@ function AdminDashboard() {
       ]),
     ];
 
-    downloadCsv(rows, "internova_purchases_export.csv");
+    downloadCsv(rows, "internovatech_purchases_export.csv");
+  };
+
+  const exportMessagesCsv = () => {
+    const rows = [
+      ["Name", "Email", "Subject", "Status", "Created At", "Updated At", "Message"],
+      ...contactMessages.map((item) => [
+        item.name || "",
+        item.email || "",
+        item.subject || "",
+        item.status || "",
+        formatDateTime(item.createdAt),
+        formatDateTime(item.updatedAt),
+        item.message || "",
+      ]),
+    ];
+
+    downloadCsv(rows, "internovatech_contact_messages_export.csv");
+  };
+
+  const exportSubscribersCsv = () => {
+    const rows = [
+      ["Email", "Source", "Status", "Subscribed At"],
+      ...subscribers.map((item) => [
+        item.email || "",
+        item.source || "",
+        item.isActive ? "Active" : "Inactive",
+        formatDateTime(item.createdAt),
+      ]),
+    ];
+
+    downloadCsv(rows, "internovatech_subscribers_export.csv");
   };
 
   const fetchOverview = async () => {
     const { data } = await API.get("/admin/overview");
     setStats(data?.stats || {});
     setRecentInternships(data?.recentInternships || []);
+    setRecentMessages(data?.recentMessages || []);
   };
 
   const fetchUsers = async ({
@@ -267,6 +331,58 @@ function AdminDashboard() {
     }
   };
 
+  const fetchContactMessages = async ({
+    page = contactPage,
+    search = contactSearch,
+    status = contactStatusFilter,
+    from = contactDateFrom,
+    to = contactDateTo,
+  } = {}) => {
+    setContactMessagesLoading(true);
+
+    try {
+      const { data } = await API.get("/admin/contact-messages", {
+        params: {
+          page,
+          limit: contactLimit,
+          search,
+          status,
+          from,
+          to,
+        },
+      });
+
+      setContactMessages(data?.items || []);
+      setContactTotalPages(data?.totalPages || 1);
+      setContactTotal(data?.total || 0);
+    } finally {
+      setContactMessagesLoading(false);
+    }
+  };
+
+  const fetchSubscribers = async ({
+    page = subscribersPage,
+    search = subscriberSearch,
+  } = {}) => {
+    setSubscribersLoading(true);
+
+    try {
+      const { data } = await API.get("/admin/subscribers", {
+        params: {
+          page,
+          limit: subscribersLimit,
+          search,
+        },
+      });
+
+      setSubscribers(data?.items || []);
+      setSubscribersTotalPages(data?.totalPages || 1);
+      setSubscribersTotal(data?.total || 0);
+    } finally {
+      setSubscribersLoading(false);
+    }
+  };
+
   const fetchAll = async () => {
     try {
       setLoading(true);
@@ -274,6 +390,8 @@ function AdminDashboard() {
         fetchOverview(),
         fetchUsers({ page: 1 }),
         fetchPurchases({ page: 1 }),
+        fetchContactMessages({ page: 1 }),
+        fetchSubscribers({ page: 1 }),
       ]);
     } catch (error) {
       console.error("Failed to fetch admin dashboard data:", error);
@@ -303,6 +421,22 @@ function AdminDashboard() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchasesPage]);
+
+  useEffect(() => {
+    fetchContactMessages({ page: contactPage }).catch((error) => {
+      console.error("Contact messages fetch failed:", error);
+      showToast("error", "Failed to fetch contact messages");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactPage]);
+
+  useEffect(() => {
+    fetchSubscribers({ page: subscribersPage }).catch((error) => {
+      console.error("Subscribers fetch failed:", error);
+      showToast("error", "Failed to fetch subscribers");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscribersPage]);
 
   const handleUserSearch = async () => {
     try {
@@ -334,6 +468,35 @@ function AdminDashboard() {
     } catch (error) {
       console.error("Purchase search failed:", error);
       showToast("error", "Failed to search purchases");
+    }
+  };
+
+  const handleContactSearch = async () => {
+    try {
+      setContactPage(1);
+      await fetchContactMessages({
+        page: 1,
+        search: contactSearch,
+        status: contactStatusFilter,
+        from: contactDateFrom,
+        to: contactDateTo,
+      });
+    } catch (error) {
+      console.error("Contact search failed:", error);
+      showToast("error", "Failed to search contact messages");
+    }
+  };
+
+  const handleSubscriberSearch = async () => {
+    try {
+      setSubscribersPage(1);
+      await fetchSubscribers({
+        page: 1,
+        search: subscriberSearch,
+      });
+    } catch (error) {
+      console.error("Subscriber search failed:", error);
+      showToast("error", "Failed to search subscribers");
     }
   };
 
@@ -378,6 +541,42 @@ function AdminDashboard() {
     } catch (error) {
       console.error("Purchases reset failed:", error);
       showToast("error", "Failed to reset purchases");
+    }
+  };
+
+  const resetContactFilters = async () => {
+    try {
+      setContactSearch("");
+      setContactStatusFilter("All");
+      setContactDateFrom("");
+      setContactDateTo("");
+      setContactPage(1);
+
+      await fetchContactMessages({
+        page: 1,
+        search: "",
+        status: "All",
+        from: "",
+        to: "",
+      });
+    } catch (error) {
+      console.error("Contact reset failed:", error);
+      showToast("error", "Failed to reset contact filters");
+    }
+  };
+
+  const resetSubscriberFilters = async () => {
+    try {
+      setSubscriberSearch("");
+      setSubscribersPage(1);
+
+      await fetchSubscribers({
+        page: 1,
+        search: "",
+      });
+    } catch (error) {
+      console.error("Subscriber reset failed:", error);
+      showToast("error", "Failed to reset subscribers");
     }
   };
 
@@ -465,6 +664,36 @@ function AdminDashboard() {
       showToast(
         "error",
         error?.response?.data?.message || "Failed to fetch certificate"
+      );
+    }
+  };
+
+  const handleReplyToMessage = async (messageId) => {
+    try {
+      if (!replyMessage.trim()) {
+        showToast("error", "Please enter a reply message");
+        return;
+      }
+
+      const { data } = await API.post(
+        `/admin/contact-messages/${messageId}/reply`,
+        {
+          replyMessage: replyMessage.trim(),
+        }
+      );
+
+      showToast("success", data?.message || "Reply sent successfully");
+      setReplyingMessageId("");
+      setReplyMessage("");
+      await Promise.all([
+        fetchContactMessages({ page: contactPage }),
+        fetchOverview(),
+      ]);
+    } catch (error) {
+      console.error("Reply to message failed:", error);
+      showToast(
+        "error",
+        error?.response?.data?.message || "Failed to send reply"
       );
     }
   };
@@ -575,6 +804,38 @@ function AdminDashboard() {
     );
   };
 
+  const getContactStatusBadge = (status) => {
+    if (status === "new") {
+      return (
+        <span className="badge bg-danger-subtle text-danger border rounded-pill px-3 py-2">
+          New
+        </span>
+      );
+    }
+
+    if (status === "replied") {
+      return (
+        <span className="badge bg-success-subtle text-success border rounded-pill px-3 py-2">
+          Replied
+        </span>
+      );
+    }
+
+    if (status === "user_replied") {
+      return (
+        <span className="badge bg-warning-subtle text-warning-emphasis border rounded-pill px-3 py-2">
+          User Replied
+        </span>
+      );
+    }
+
+    return (
+      <span className="badge bg-secondary-subtle text-dark border rounded-pill px-3 py-2">
+        {status || "Closed"}
+      </span>
+    );
+  };
+
   const getYesNoBadge = (value, yesLabel = "Yes", noLabel = "No") =>
     value ? (
       <span className="badge bg-success-subtle text-success border rounded-pill px-3 py-2">
@@ -671,6 +932,7 @@ function AdminDashboard() {
           background: rgba(255,255,255,0.12);
           border: 1px solid rgba(255,255,255,0.18);
           backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
           font-size: 0.8rem;
           font-weight: 700;
           letter-spacing: 0.08em;
@@ -695,16 +957,22 @@ function AdminDashboard() {
           border: 1px solid rgba(255,255,255,0.45);
           background: rgba(255,255,255,0.78);
           backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           box-shadow:
+            0 22px 65px rgba(15, 23, 42, 0.10),
+            0 8px 20px rgba(59,130,246,0.05);
+          -webkit-box-shadow:
             0 22px 65px rgba(15, 23, 42, 0.10),
             0 8px 20px rgba(59,130,246,0.05);
           padding: 24px;
           height: 100%;
           transition: all 0.35s ease;
+          -webkit-transition: all 0.35s ease;
         }
         .admin-stat-card:hover,
         .admin-chart-card:hover {
           transform: translateY(-4px);
+          -webkit-transform: translateY(-4px);
         }
         .admin-stat-label {
           font-size: 0.9rem;
@@ -728,7 +996,11 @@ function AdminDashboard() {
           border: 1px solid rgba(255,255,255,0.42);
           background: rgba(255,255,255,0.72);
           backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
           box-shadow:
+            0 24px 70px rgba(15, 23, 42, 0.14),
+            0 8px 24px rgba(59,130,246,0.08);
+          -webkit-box-shadow:
             0 24px 70px rgba(15, 23, 42, 0.14),
             0 8px 24px rgba(59,130,246,0.08);
           border-radius: 28px;
@@ -775,7 +1047,7 @@ function AdminDashboard() {
         }
         .admin-table {
           width: 100%;
-          min-width: 1120px;
+          min-width: 1180px;
           border-collapse: separate;
           border-spacing: 0;
         }
@@ -806,6 +1078,7 @@ function AdminDashboard() {
           color: #64748b;
           font-size: 0.9rem;
           margin-top: 2px;
+          word-break: break-word;
         }
         .admin-progress-pill {
           display: inline-flex;
@@ -825,12 +1098,30 @@ function AdminDashboard() {
           gap: 14px;
           margin-bottom: 22px;
         }
+        .admin-filter-grid-contact {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+          gap: 14px;
+          margin-bottom: 22px;
+        }
+        .admin-filter-grid-subscriber {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 14px;
+          margin-bottom: 22px;
+        }
         .admin-input,
-        .admin-select {
+        .admin-select,
+        .admin-textarea {
           min-height: 52px;
           border-radius: 16px;
           border: 1px solid #dbe3f0;
           background: #f8fafc;
+        }
+        .admin-textarea {
+          min-height: 120px;
+          padding-top: 12px;
+          resize: vertical;
         }
         .admin-view-btn {
           min-height: 40px;
@@ -842,6 +1133,7 @@ function AdminDashboard() {
           inset: 0;
           background: rgba(15, 23, 42, 0.55);
           backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
           z-index: 99998;
           display: flex;
           align-items: center;
@@ -849,13 +1141,14 @@ function AdminDashboard() {
           padding: 18px;
         }
         .admin-modal-card {
-          width: min(860px, 100%);
+          width: min(900px, 100%);
           max-height: 90vh;
           overflow-y: auto;
           background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
           border: 1px solid #dbeafe;
           border-radius: 28px;
           box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+          -webkit-box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
           padding: 24px;
         }
         .admin-info-box {
@@ -877,9 +1170,15 @@ function AdminDashboard() {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           50% { transform: translateY(-18px) translateX(10px); }
         }
+        @-webkit-keyframes adminDashboardFloat {
+          0%, 100% { -webkit-transform: translateY(0px) translateX(0px); }
+          50% { -webkit-transform: translateY(-18px) translateX(10px); }
+        }
         @media (max-width: 991px) {
           .admin-dashboard-title { font-size: 1.95rem; }
-          .admin-filter-grid { grid-template-columns: 1fr; }
+          .admin-filter-grid,
+          .admin-filter-grid-contact,
+          .admin-filter-grid-subscriber { grid-template-columns: 1fr; }
         }
         @media (max-width: 767px) {
           .admin-dashboard-page { padding: 22px 0; }
@@ -932,12 +1231,12 @@ function AdminDashboard() {
             <div className="card-body p-4 p-md-5">
               <div className="row g-4 align-items-center">
                 <div className="col-lg-8">
-                  <div className="admin-dashboard-chip">Internova Admin Overview</div>
+                  <div className="admin-dashboard-chip">InternovaTech Admin Overview</div>
                   <h1 className="admin-dashboard-title">Admin Intelligence Dashboard</h1>
                   <p className="admin-dashboard-text">
                     Monitor programs, users, enrollments, quiz completions,
-                    certificates, and recent purchase activity from one premium
-                    admin command center.
+                    certificates, subscribers, contact messages, and recent
+                    purchase activity from one premium admin command center.
                   </p>
                 </div>
 
@@ -969,6 +1268,8 @@ function AdminDashboard() {
               ["Paid Purchases", stats.paidPurchases],
               ["Certificates Issued", stats.totalCertificatesIssued],
               ["Quiz Passed", stats.totalQuizPassed],
+              ["Subscribers", stats.totalSubscribers],
+              ["Unread Messages", stats.totalUnreadContactMessages],
             ].map(([label, value], idx) => (
               <div className="col-md-6 col-xl-3" key={idx}>
                 <div className="admin-stat-card">
@@ -1181,13 +1482,14 @@ function AdminDashboard() {
                     <th>Last Login</th>
                     <th>Purchases</th>
                     <th>Certificates</th>
+                    <th>Notifications</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {usersLoading ? (
                     <tr>
-                      <td colSpan="8" className="text-center py-4 text-secondary">
+                      <td colSpan="9" className="text-center py-4 text-secondary">
                         Loading users...
                       </td>
                     </tr>
@@ -1204,6 +1506,7 @@ function AdminDashboard() {
                         <td>{formatDateTime(user.lastLoginAt)}</td>
                         <td>{user.purchasesCount || 0}</td>
                         <td>{user.certificatesCount || 0}</td>
+                        <td>{user.unreadNotifications || 0}</td>
                         <td>
                           <div className="d-flex gap-2 flex-wrap">
                             <button
@@ -1229,7 +1532,7 @@ function AdminDashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" className="text-center py-4 text-secondary">
+                      <td colSpan="9" className="text-center py-4 text-secondary">
                         No user data available.
                       </td>
                     </tr>
@@ -1261,7 +1564,7 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="admin-section-card p-4 p-md-5">
+          <div className="admin-section-card p-4 p-md-5 mb-4">
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
                 <h3 className="admin-section-title">Purchases Management</h3>
@@ -1506,6 +1809,342 @@ function AdminDashboard() {
               </button>
             </div>
           </div>
+
+          <div className="admin-section-card p-4 p-md-5 mb-4">
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div>
+                <h3 className="admin-section-title">Contact Messages Inbox</h3>
+                <p className="admin-section-subtitle">
+                  View support messages, reply to users, and manage conversation flow.
+                </p>
+              </div>
+
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={exportMessagesCsv}
+              >
+                Export Current Page CSV
+              </button>
+            </div>
+
+            <div className="admin-filter-grid-contact">
+              <input
+                type="text"
+                className="form-control admin-input"
+                placeholder="Search by name, email, subject, message..."
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
+              />
+
+              <select
+                className="form-select admin-select"
+                value={contactStatusFilter}
+                onChange={(e) => setContactStatusFilter(e.target.value)}
+              >
+                <option value="All">All Status</option>
+                <option value="new">New</option>
+                <option value="replied">Replied</option>
+                <option value="user_replied">User Replied</option>
+                <option value="closed">Closed</option>
+              </select>
+
+              <input
+                type="date"
+                className="form-control admin-input"
+                value={contactDateFrom}
+                onChange={(e) => setContactDateFrom(e.target.value)}
+              />
+
+              <input
+                type="date"
+                className="form-control admin-input"
+                value={contactDateTo}
+                onChange={(e) => setContactDateTo(e.target.value)}
+              />
+
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={handleContactSearch}
+              >
+                Search
+              </button>
+
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                type="button"
+                onClick={resetContactFilters}
+              >
+                Reset
+              </button>
+            </div>
+
+            <div className="mb-2 text-secondary small">
+              Total Messages Found: {contactTotal}
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Reply</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contactMessagesLoading ? (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4 text-secondary">
+                        Loading contact messages...
+                      </td>
+                    </tr>
+                  ) : contactMessages.length > 0 ? (
+                    contactMessages.map((item) => (
+                      <tr key={item._id}>
+                        <td>
+                          <div className="admin-user-name">{item.name || "Unknown User"}</div>
+                          <div className="admin-user-email">{item.email || "N/A"}</div>
+                        </td>
+                        <td>
+                          <div className="admin-user-name">{item.subject || "No Subject"}</div>
+                          <div className="admin-user-email">
+                            {(item.message || "").slice(0, 80)}
+                            {(item.message || "").length > 80 ? "..." : ""}
+                          </div>
+                        </td>
+                        <td>{getContactStatusBadge(item.status)}</td>
+                        <td>{formatDateTime(item.createdAt)}</td>
+                        <td>{formatDateTime(item.updatedAt)}</td>
+                        <td>
+                          {item.adminReply?.message ? (
+                            <span className="badge bg-success-subtle text-success border rounded-pill px-3 py-2">
+                              Replied
+                            </span>
+                          ) : (
+                            <span className="badge bg-secondary-subtle text-dark border rounded-pill px-3 py-2">
+                              Pending
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <button
+                              className="btn btn-outline-primary admin-view-btn"
+                              type="button"
+                              onClick={() => {
+                                setSelectedContactMessage(item);
+                                setReplyingMessageId(item._id);
+                                setReplyMessage(item.adminReply?.message || "");
+                              }}
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="btn btn-outline-success admin-view-btn"
+                              type="button"
+                              onClick={() => {
+                                setReplyingMessageId(item._id);
+                                setSelectedContactMessage(item);
+                                setReplyMessage(item.adminReply?.message || "");
+                              }}
+                            >
+                              Reply
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4 text-secondary">
+                        No contact messages found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="admin-pagination">
+              <button
+                className="btn btn-outline-dark"
+                disabled={contactPage <= 1}
+                onClick={() => setContactPage((prev) => prev - 1)}
+              >
+                Prev
+              </button>
+
+              <span className="fw-semibold">
+                Page {contactPage} / {contactTotalPages}
+              </span>
+
+              <button
+                className="btn btn-outline-dark"
+                disabled={contactPage >= contactTotalPages}
+                onClick={() => setContactPage((prev) => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
+          <div className="admin-section-card p-4 p-md-5 mb-4">
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <div>
+                <h3 className="admin-section-title">Subscriber List</h3>
+                <p className="admin-section-subtitle">
+                  View all newsletter subscribers collected from the footer form.
+                </p>
+              </div>
+
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={exportSubscribersCsv}
+              >
+                Export Current Page CSV
+              </button>
+            </div>
+
+            <div className="admin-filter-grid-subscriber">
+              <input
+                type="text"
+                className="form-control admin-input"
+                placeholder="Search by subscriber email..."
+                value={subscriberSearch}
+                onChange={(e) => setSubscriberSearch(e.target.value)}
+              />
+
+              <button
+                className="btn btn-outline-primary admin-action-btn"
+                type="button"
+                onClick={handleSubscriberSearch}
+              >
+                Search
+              </button>
+
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                type="button"
+                onClick={resetSubscriberFilters}
+              >
+                Reset
+              </button>
+            </div>
+
+            <div className="mb-2 text-secondary small">
+              Total Subscribers Found: {subscribersTotal}
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table" style={{ minWidth: "820px" }}>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Source</th>
+                    <th>Status</th>
+                    <th>Subscribed At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subscribersLoading ? (
+                    <tr>
+                      <td colSpan="4" className="text-center py-4 text-secondary">
+                        Loading subscribers...
+                      </td>
+                    </tr>
+                  ) : subscribers.length > 0 ? (
+                    subscribers.map((item) => (
+                      <tr key={item._id}>
+                        <td>
+                          <div className="admin-user-name">{item.email || "N/A"}</div>
+                        </td>
+                        <td>{item.source || "footer"}</td>
+                        <td>
+                          {getYesNoBadge(item.isActive, "Active", "Inactive")}
+                        </td>
+                        <td>{formatDateTime(item.createdAt)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center py-4 text-secondary">
+                        No subscribers found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="admin-pagination">
+              <button
+                className="btn btn-outline-dark"
+                disabled={subscribersPage <= 1}
+                onClick={() => setSubscribersPage((prev) => prev - 1)}
+              >
+                Prev
+              </button>
+
+              <span className="fw-semibold">
+                Page {subscribersPage} / {subscribersTotalPages}
+              </span>
+
+              <button
+                className="btn btn-outline-dark"
+                disabled={subscribersPage >= subscribersTotalPages}
+                onClick={() => setSubscribersPage((prev) => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+
+          <div className="admin-section-card p-4 p-md-5">
+            <h3 className="admin-section-title">Recent Contact Activity</h3>
+            <p className="admin-section-subtitle">
+              Quick snapshot of latest support conversations.
+            </p>
+
+            <div className="row g-4">
+              {recentMessages.length > 0 ? (
+                recentMessages.map((item) => (
+                  <div className="col-md-6 col-xl-4" key={item._id}>
+                    <div className="admin-recent-card">
+                      <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+                        <h5 className="admin-recent-title mb-0">
+                          {item.subject || "No Subject"}
+                        </h5>
+                        {getContactStatusBadge(item.status)}
+                      </div>
+                      <p className="admin-mini-text mb-1">
+                        <strong>Name:</strong> {item.name || "Unknown"}
+                      </p>
+                      <p className="admin-mini-text mb-1">
+                        <strong>Email:</strong> {item.email || "N/A"}
+                      </p>
+                      <p className="admin-mini-text mb-0">
+                        <strong>Updated:</strong> {formatDateTime(item.updatedAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-12">
+                  <div className="admin-recent-card text-center text-secondary">
+                    No recent contact activity.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1550,8 +2189,11 @@ function AdminDashboard() {
                   <p className="mb-2">
                     <strong>Joined:</strong> {formatDate(selectedUser.createdAt)}
                   </p>
-                  <p className="mb-0">
+                  <p className="mb-2">
                     <strong>Last Login:</strong> {formatDateTime(selectedUser.lastLoginAt)}
+                  </p>
+                  <p className="mb-0">
+                    <strong>Unread Notifications:</strong> {selectedUser.unreadNotifications || 0}
                   </p>
                 </div>
               </div>
@@ -1704,6 +2346,114 @@ function AdminDashboard() {
                     <strong>ID:</strong> {selectedPurchase.certificate?.certificateId || "N/A"}
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedContactMessage && (
+        <div
+          className="admin-modal-backdrop"
+          onClick={() => {
+            setSelectedContactMessage(null);
+            setReplyingMessageId("");
+            setReplyMessage("");
+          }}
+        >
+          <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+              <div>
+                <h3 className="fw-bold mb-2">
+                  {selectedContactMessage.subject || "Contact Message"}
+                </h3>
+                <div className="d-flex gap-2 flex-wrap">
+                  {getContactStatusBadge(selectedContactMessage.status)}
+                </div>
+              </div>
+
+              <button
+                className="btn btn-outline-dark admin-action-btn"
+                onClick={() => {
+                  setSelectedContactMessage(null);
+                  setReplyingMessageId("");
+                  setReplyMessage("");
+                }}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="row g-4 mb-4">
+              <div className="col-md-6">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Sender Details</h5>
+                  <p className="mb-2">
+                    <strong>Name:</strong> {selectedContactMessage.name || "Unknown"}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Email:</strong> {selectedContactMessage.email || "N/A"}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Created:</strong> {formatDateTime(selectedContactMessage.createdAt)}
+                  </p>
+                  <p className="mb-0">
+                    <strong>Updated:</strong> {formatDateTime(selectedContactMessage.updatedAt)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <div className="admin-info-box">
+                  <h5 className="fw-bold mb-3">Original Message</h5>
+                  <p className="mb-0" style={{ whiteSpace: "pre-wrap", lineHeight: "1.8" }}>
+                    {selectedContactMessage.message || "No message"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {selectedContactMessage.adminReply?.message && (
+              <div className="admin-info-box mb-4">
+                <h5 className="fw-bold mb-3">Existing Admin Reply</h5>
+                <p className="mb-2" style={{ whiteSpace: "pre-wrap", lineHeight: "1.8" }}>
+                  {selectedContactMessage.adminReply.message}
+                </p>
+                <p className="mb-0 text-secondary small">
+                  Replied at: {formatDateTime(selectedContactMessage.adminReply.repliedAt)}
+                </p>
+              </div>
+            )}
+
+            <div className="admin-info-box">
+              <h5 className="fw-bold mb-3">Send Admin Reply</h5>
+              <textarea
+                className="form-control admin-textarea mb-3"
+                placeholder="Write your reply here..."
+                value={replyingMessageId === selectedContactMessage._id ? replyMessage : ""}
+                onChange={(e) => {
+                  setReplyingMessageId(selectedContactMessage._id);
+                  setReplyMessage(e.target.value);
+                }}
+              />
+
+              <div className="d-flex gap-2 flex-wrap">
+                <button
+                  className="btn btn-success admin-action-btn"
+                  onClick={() => handleReplyToMessage(selectedContactMessage._id)}
+                >
+                  Send Reply
+                </button>
+
+                <button
+                  className="btn btn-outline-dark admin-action-btn"
+                  onClick={() => {
+                    setReplyingMessageId("");
+                    setReplyMessage("");
+                  }}
+                >
+                  Clear
+                </button>
               </div>
             </div>
           </div>
