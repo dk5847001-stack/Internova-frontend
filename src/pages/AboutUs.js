@@ -355,6 +355,7 @@ function AboutUs() {
             0 10px 26px rgba(29,78,216,0.10);
           animation: homeV61CardFloat 6.2s ease-in-out infinite;
           -webkit-animation: homeV61CardFloat 6.2s ease-in-out infinite;
+          z-index: 2;
         }
 
         .home-v61-dashboard::before {
@@ -373,12 +374,14 @@ function AboutUs() {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 12px;
           margin-bottom: 18px;
         }
 
         .home-v61-window-dots {
           display: flex;
           gap: 8px;
+          flex-shrink: 0;
         }
 
         .home-v61-window-dot {
@@ -394,6 +397,7 @@ function AboutUs() {
           color: rgba(255,255,255,0.82);
           letter-spacing: 0.06em;
           text-transform: uppercase;
+          text-align: right;
         }
 
         .home-v61-metric-grid {
@@ -414,6 +418,7 @@ function AboutUs() {
           padding: 18px;
           transition: all 0.32s ease;
           -webkit-transition: all 0.32s ease;
+          min-width: 0;
         }
 
         .home-v61-metric-card:hover {
@@ -436,6 +441,7 @@ function AboutUs() {
           font-weight: 900;
           color: #fff;
           margin-bottom: 6px;
+          word-break: break-word;
         }
 
         .home-v61-metric-text {
@@ -916,10 +922,14 @@ function AboutUs() {
 
           .home-v61-showcase {
             margin-top: 26px;
+            display: block;
+            width: 100%;
           }
 
           .home-v61-dashboard {
             max-width: 100%;
+            width: 100%;
+            margin: 0;
           }
 
           .home-v61-floating-left,
@@ -935,6 +945,10 @@ function AboutUs() {
         }
 
         @media (max-width: 767px) {
+          .home-v61-page {
+            padding: 22px 0 54px;
+          }
+
           .home-v61-title {
             font-size: 2.05rem;
           }
@@ -959,6 +973,14 @@ function AboutUs() {
             border-radius: 22px;
           }
 
+          .home-v61-badge {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.74rem;
+            padding: 10px 14px;
+          }
+
           .home-v61-cta-row {
             gap: 12px;
           }
@@ -969,10 +991,143 @@ function AboutUs() {
             width: 100%;
           }
 
+          .home-v61-mini-strip {
+            gap: 10px;
+          }
+
+          .home-v61-mini-chip {
+            width: 100%;
+            text-align: center;
+          }
+
+          .home-v61-window-top {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .home-v61-window-title {
+            text-align: left;
+            font-size: 0.78rem;
+          }
+
           .home-v61-trust-row,
           .home-v61-step-grid,
           .home-v61-metric-grid {
             grid-template-columns: 1fr;
+          }
+
+          .home-v61-metric-card,
+          .home-v61-floating-card,
+          .home-v61-trust-item,
+          .home-v61-step-card {
+            min-width: 0;
+          }
+
+          .home-v61-progress-meta {
+            font-size: 0.84rem;
+          }
+
+          .home-v61-link-row {
+            flex-direction: column;
+          }
+
+          .home-v61-link-chip {
+            width: 100%;
+            text-align: center;
+          }
+        }
+
+        @media (max-width: 575px) {
+          .home-v61-page .container {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
+          .home-v61-hero-wrap,
+          .home-v61-grid-card,
+          .home-v61-dashboard,
+          .home-v61-process-inner,
+          .home-v61-final-card,
+          .home-v61-trust-strip,
+          .home-v61-step-card {
+            padding: 18px;
+            border-radius: 20px;
+          }
+
+          .home-v61-title {
+            font-size: 1.8rem;
+            line-height: 1.15;
+          }
+
+          .home-v61-subtitle {
+            font-size: 0.98rem;
+          }
+
+          .home-v61-badge {
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+          }
+
+          .home-v61-btn-primary,
+          .home-v61-btn-success,
+          .home-v61-btn-outline {
+            min-height: 52px;
+            padding: 0 18px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+          }
+
+          .home-v61-mini-chip {
+            font-size: 0.8rem;
+            padding: 10px 12px;
+          }
+
+          .home-v61-dashboard {
+            border-radius: 24px;
+          }
+
+          .home-v61-window-dot {
+            width: 8px;
+            height: 8px;
+          }
+
+          .home-v61-window-title {
+            font-size: 0.74rem;
+          }
+
+          .home-v61-metric-label,
+          .home-v61-trust-label {
+            font-size: 0.72rem;
+          }
+
+          .home-v61-metric-value {
+            font-size: 1.22rem;
+          }
+
+          .home-v61-card-title,
+          .home-v61-final-title {
+            font-size: 1.28rem;
+          }
+
+          .home-v61-process-title {
+            font-size: 1.45rem;
+          }
+
+          .home-v61-floating-card {
+            padding: 16px;
+            border-radius: 18px;
+          }
+
+          .home-v61-floating-title {
+            font-size: 0.88rem;
+          }
+
+          .home-v61-floating-text,
+          .home-v61-card-text,
+          .home-v61-final-text,
+          .home-v61-process-text,
+          .home-v61-step-text {
+            font-size: 0.92rem;
           }
         }
       `}</style>

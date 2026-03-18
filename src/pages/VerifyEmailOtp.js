@@ -1,41 +1,24 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import API from "../services/api";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function VerifyEmailOtp() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const prefilledEmail = useMemo(() => {
-    return (
-      location.state?.email ||
-      localStorage.getItem("pendingVerificationEmail") ||
-      ""
-    );
-  }, [location.state]);
-
-  const [email, setEmail] = useState(prefilledEmail);
+  const [email, setEmail] = useState(
+    location.state?.email || localStorage.getItem("pendingVerificationEmail") || ""
+  );
   const [otp, setOtp] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
-    if (prefilledEmail) {
-      setEmail(prefilledEmail);
+    if (email) {
+      localStorage.setItem("pendingVerificationEmail", email);
     }
-  }, [prefilledEmail]);
-
-  useEffect(() => {
-    if (resendTimer <= 0) return;
-
-    const timer = setTimeout(() => {
-      setResendTimer((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [resendTimer]);
+  }, [email]);
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
@@ -44,21 +27,32 @@ function VerifyEmailOtp() {
       setLoading(true);
       setMessage("");
 
-      const { data } = await API.post("/auth/verify-email-otp", {
-        email,
-        otp,
-      });
+      const payload = {
+        email: email.trim(),
+        otp: otp.trim(),
+      };
+
+      const { data } = await API.post("/auth/verify-email-otp", payload);
 
       localStorage.removeItem("pendingVerificationEmail");
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
 
-      setMessage("Email verified successfully");
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      if (data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+
+      setMessage(data?.message || "Email verified successfully.");
+
       setTimeout(() => {
         navigate("/dashboard");
-      }, 700);
+      }, 800);
     } catch (error) {
-      setMessage(error.response?.data?.message || "OTP verification failed");
+      setMessage(
+        error.response?.data?.message || "OTP verification failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -66,25 +60,25 @@ function VerifyEmailOtp() {
 
   const handleResendOtp = async () => {
     try {
-      setResendLoading(true);
+      setResending(true);
       setMessage("");
 
-      const { data } = await API.post("/auth/resend-email-otp", { email });
+      const { data } = await API.post("/auth/resend-email-otp", {
+        email: email.trim(),
+      });
 
-      localStorage.setItem("pendingVerificationEmail", email);
-      setMessage(data.message || "A new OTP has been sent");
-      setResendTimer(30);
+      setMessage(data?.message || "OTP resent successfully.");
     } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to resend OTP");
+      setMessage(error.response?.data?.message || "Failed to resend OTP.");
     } finally {
-      setResendLoading(false);
+      setResending(false);
     }
   };
 
   return (
     <>
       <style>{`
-        .verify-page {
+        .otp-page {
           min-height: 100vh;
           background:
             radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 28%),
@@ -94,16 +88,16 @@ function VerifyEmailOtp() {
           overflow: hidden;
         }
 
-        .verify-orb {
+        .otp-orb {
           position: absolute;
           border-radius: 50%;
           filter: blur(10px);
           opacity: 0.55;
+          animation: otpFloat 9s ease-in-out infinite;
           pointer-events: none;
-          animation: verifyFloat 9s ease-in-out infinite;
         }
 
-        .verify-orb-1 {
+        .otp-orb-1 {
           width: 220px;
           height: 220px;
           top: 70px;
@@ -111,7 +105,7 @@ function VerifyEmailOtp() {
           background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(14,165,233,0.18));
         }
 
-        .verify-orb-2 {
+        .otp-orb-2 {
           width: 280px;
           height: 280px;
           right: -80px;
@@ -120,21 +114,21 @@ function VerifyEmailOtp() {
           animation-delay: 1.5s;
         }
 
-        .verify-shell {
+        .otp-shell {
           position: relative;
           z-index: 2;
         }
 
-        .verify-card {
+        .otp-main-card {
           border: 1px solid rgba(255,255,255,0.45);
-          background: rgba(255,255,255,0.76);
+          background: rgba(255,255,255,0.72);
           backdrop-filter: blur(16px);
           box-shadow:
             0 24px 70px rgba(15, 23, 42, 0.14),
             0 8px 24px rgba(59, 130, 246, 0.08);
         }
 
-        .verify-brand-panel {
+        .otp-brand-panel {
           background:
             linear-gradient(145deg, #081226 0%, #0b1736 35%, #142850 75%, #1d4ed8 100%);
           color: #fff;
@@ -142,17 +136,7 @@ function VerifyEmailOtp() {
           overflow: hidden;
         }
 
-        .verify-brand-panel::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 22%),
-            radial-gradient(circle at 80% 75%, rgba(255,255,255,0.10), transparent 18%);
-          pointer-events: none;
-        }
-
-        .verify-chip {
+        .otp-chip {
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -167,7 +151,7 @@ function VerifyEmailOtp() {
           margin-bottom: 20px;
         }
 
-        .verify-brand-logo {
+        .otp-brand-logo {
           width: 52px;
           height: 52px;
           border-radius: 18px;
@@ -181,20 +165,27 @@ function VerifyEmailOtp() {
           margin-bottom: 18px;
         }
 
-        .verify-title {
-          font-size: 2rem;
+        .otp-brand-title {
+          font-size: 2.2rem;
           font-weight: 800;
+          letter-spacing: -0.03em;
           margin-bottom: 10px;
         }
 
-        .verify-subtitle {
-          font-size: 1rem;
-          color: rgba(255,255,255,0.84);
+        .otp-brand-subtitle {
+          font-size: 1.05rem;
+          color: rgba(255,255,255,0.82);
           line-height: 1.8;
-          margin-bottom: 24px;
+          margin-bottom: 28px;
+          max-width: 460px;
         }
 
-        .verify-feature {
+        .otp-feature-list {
+          display: grid;
+          gap: 12px;
+        }
+
+        .otp-feature-item {
           display: flex;
           align-items: center;
           gap: 12px;
@@ -202,10 +193,11 @@ function VerifyEmailOtp() {
           border-radius: 18px;
           background: rgba(255,255,255,0.08);
           border: 1px solid rgba(255,255,255,0.10);
-          margin-bottom: 12px;
+          color: rgba(255,255,255,0.92);
+          font-size: 0.95rem;
         }
 
-        .verify-dot {
+        .otp-feature-dot {
           width: 10px;
           height: 10px;
           border-radius: 50%;
@@ -214,16 +206,16 @@ function VerifyEmailOtp() {
           flex-shrink: 0;
         }
 
-        .verify-form-panel {
-          background: rgba(255,255,255,0.84);
+        .otp-form-panel {
+          background: rgba(255,255,255,0.82);
         }
 
-        .verify-wrap {
+        .otp-form-wrap {
           max-width: 460px;
           margin: 0 auto;
         }
 
-        .verify-kicker {
+        .otp-form-kicker {
           display: inline-block;
           font-size: 0.78rem;
           font-weight: 700;
@@ -237,20 +229,21 @@ function VerifyEmailOtp() {
           margin-bottom: 14px;
         }
 
-        .verify-heading {
+        .otp-heading {
           font-size: 2rem;
           font-weight: 800;
+          letter-spacing: -0.03em;
           color: #0f172a;
           margin-bottom: 8px;
         }
 
-        .verify-text {
+        .otp-subheading {
           color: #64748b;
-          margin-bottom: 24px;
           line-height: 1.7;
+          margin-bottom: 24px;
         }
 
-        .verify-alert {
+        .otp-alert {
           border: none;
           border-radius: 18px;
           padding: 14px 16px;
@@ -258,37 +251,59 @@ function VerifyEmailOtp() {
           margin-bottom: 22px;
         }
 
-        .verify-alert-success {
+        .otp-alert-success {
           background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
           color: #065f46;
           border: 1px solid #86efac;
         }
 
-        .verify-alert-error {
+        .otp-alert-error {
           background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
           color: #991b1b;
           border: 1px solid #fca5a5;
         }
 
-        .verify-label {
+        .otp-label {
           font-weight: 700;
           color: #0f172a;
           margin-bottom: 9px;
           font-size: 0.95rem;
         }
 
-        .verify-input {
+        .otp-input-wrap {
+          position: relative;
+        }
+
+        .otp-input-icon {
+          position: absolute;
+          top: 50%;
+          left: 16px;
+          transform: translateY(-50%);
+          width: 20px;
+          height: 20px;
+          color: #64748b;
+          pointer-events: none;
+          z-index: 2;
+        }
+
+        .otp-input {
           min-height: 60px;
           border-radius: 18px;
           border: 1px solid #dbe3f0;
           background: #f8fafc;
-          padding: 14px 18px;
+          padding: 14px 18px 14px 50px;
           color: #0f172a;
           font-size: 1rem;
           transition: all 0.3s ease;
         }
 
-        .verify-input:focus {
+        .otp-input.otp-code-input {
+          letter-spacing: 0.35em;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+
+        .otp-input:focus {
           border-color: #60a5fa;
           background: #ffffff;
           box-shadow:
@@ -297,22 +312,16 @@ function VerifyEmailOtp() {
           transform: translateY(-1px);
         }
 
-        .verify-otp-input {
-          letter-spacing: 0.45em;
-          text-align: center;
-          font-weight: 800;
-          font-size: 1.2rem;
-        }
-
-        .verify-primary-btn,
-        .verify-secondary-btn {
-          min-height: 56px;
+        .otp-submit-btn,
+        .otp-resend-btn {
+          min-height: 58px;
           border-radius: 18px;
           font-weight: 800;
-          transition: all 0.3s ease;
+          font-size: 1rem;
+          transition: all 0.32s ease;
         }
 
-        .verify-primary-btn {
+        .otp-submit-btn {
           border: none;
           color: #fff;
           background: linear-gradient(135deg, #0b1736 0%, #142850 40%, #1d4ed8 100%);
@@ -321,111 +330,130 @@ function VerifyEmailOtp() {
             0 8px 20px rgba(11, 23, 54, 0.18);
         }
 
-        .verify-secondary-btn {
+        .otp-resend-btn {
           border: 1px solid #dbe3f0;
-          background: rgba(255,255,255,0.7);
+          background: #fff;
           color: #0f172a;
         }
 
-        .verify-primary-btn:hover:not(:disabled),
-        .verify-secondary-btn:hover:not(:disabled) {
+        .otp-submit-btn:hover:not(:disabled),
+        .otp-resend-btn:hover:not(:disabled) {
           transform: translateY(-2px);
         }
 
-        .verify-primary-btn:disabled,
-        .verify-secondary-btn:disabled {
-          opacity: 0.75;
+        .otp-submit-btn:disabled,
+        .otp-resend-btn:disabled {
+          opacity: 0.8;
           cursor: not-allowed;
         }
 
-        .verify-footer {
+        .otp-button-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-top: 8px;
+        }
+
+        .otp-footer-text {
           text-align: center;
           color: #64748b;
-          margin-top: 20px;
+          margin-top: 22px;
           margin-bottom: 0;
         }
 
-        .verify-link {
+        .otp-link {
           color: #2563eb;
           text-decoration: none;
           font-weight: 700;
         }
 
-        .verify-link:hover {
+        .otp-link:hover {
           color: #1d4ed8;
           text-decoration: none;
         }
 
-        .verify-timer-text {
-          margin-top: 12px;
-          text-align: center;
-          color: #64748b;
-          font-weight: 600;
-        }
-
-        @keyframes verifyFloat {
+        @keyframes otpFloat {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           50% { transform: translateY(-18px) translateX(10px); }
         }
 
-        @media (max-width: 991px) {
-          .verify-title,
-          .verify-heading {
-            font-size: 1.8rem;
+        @media (max-width: 767px) {
+          .otp-page {
+            padding: 24px 0;
+          }
+
+          .otp-brand-panel,
+          .otp-form-panel {
+            border-radius: 0 !important;
+          }
+
+          .otp-brand-title {
+            font-size: 1.7rem;
+          }
+
+          .otp-heading {
+            font-size: 1.6rem;
+          }
+
+          .otp-button-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
 
-      <div className="verify-page d-flex align-items-center py-4 py-lg-5">
-        <div className="verify-orb verify-orb-1"></div>
-        <div className="verify-orb verify-orb-2"></div>
+      <div className="otp-page d-flex align-items-center py-4 py-lg-5">
+        <div className="otp-orb otp-orb-1"></div>
+        <div className="otp-orb otp-orb-2"></div>
 
-        <div className="container verify-shell">
+        <div className="container otp-shell">
           <div className="row justify-content-center align-items-center min-vh-100">
             <div className="col-xl-11 col-xxl-10">
-              <div className="card verify-card border-0 rounded-5 overflow-hidden">
+              <div className="card otp-main-card border-0 rounded-5 overflow-hidden">
                 <div className="row g-0">
-                  <div className="col-lg-6 verify-brand-panel d-flex flex-column justify-content-center p-4 p-md-5 p-xl-5">
-                    <div className="verify-chip">Internova Email Security</div>
-                    <div className="verify-brand-logo">IN</div>
-                    <h1 className="verify-title">Verify Your Email</h1>
-                    <p className="verify-subtitle">
-                      Enter the OTP sent to your email address to activate your
-                      Internova account and continue securely.
+                  <div className="col-lg-6 otp-brand-panel d-flex flex-column justify-content-center p-4 p-md-5 p-xl-5">
+                    <div className="otp-chip">Email Verification</div>
+                    <div className="otp-brand-logo">IN</div>
+
+                    <h1 className="otp-brand-title">Verify Your Email</h1>
+                    <p className="otp-brand-subtitle">
+                      Confirm your email with the OTP sent to your inbox and
+                      activate your Internova account securely.
                     </p>
 
-                    <div className="verify-feature">
-                      <span className="verify-dot"></span>
-                      OTP expires in 10 minutes for better account protection
-                    </div>
-                    <div className="verify-feature">
-                      <span className="verify-dot"></span>
-                      Verified access unlocks dashboard and learning tools
-                    </div>
-                    <div className="verify-feature">
-                      <span className="verify-dot"></span>
-                      Secure login for certificates, tests and enrollments
+                    <div className="otp-feature-list">
+                      <div className="otp-feature-item">
+                        <span className="otp-feature-dot"></span>
+                        Fast OTP verification flow
+                      </div>
+                      <div className="otp-feature-item">
+                        <span className="otp-feature-dot"></span>
+                        Secure account activation process
+                      </div>
+                      <div className="otp-feature-item">
+                        <span className="otp-feature-dot"></span>
+                        Instant access to dashboard after verification
+                      </div>
                     </div>
                   </div>
 
-                  <div className="col-lg-6 verify-form-panel">
+                  <div className="col-lg-6 otp-form-panel">
                     <div className="p-4 p-md-5 p-xl-5 h-100 d-flex align-items-center">
-                      <div className="verify-wrap w-100">
-                        <div className="verify-kicker">OTP Verification</div>
-                        <h2 className="verify-heading">Confirm your account</h2>
-                        <p className="verify-text">
-                          Use the 6-digit OTP sent to your email. You can also
-                          request a new OTP if needed.
+                      <div className="otp-form-wrap w-100">
+                        <div className="otp-form-kicker">OTP Verification</div>
+                        <h2 className="otp-heading">Enter verification code</h2>
+                        <p className="otp-subheading">
+                          Enter your email and the OTP received in your inbox to
+                          verify your account and continue.
                         </p>
 
                         {message && (
                           <div
-                            className={`verify-alert ${
+                            className={`otp-alert ${
                               message.toLowerCase().includes("success") ||
-                              message.toLowerCase().includes("sent") ||
-                              message.toLowerCase().includes("already verified")
-                                ? "verify-alert-success"
-                                : "verify-alert-error"
+                              message.toLowerCase().includes("verified") ||
+                              message.toLowerCase().includes("resent")
+                                ? "otp-alert-success"
+                                : "otp-alert-error"
                             }`}
                           >
                             {message}
@@ -434,65 +462,105 @@ function VerifyEmailOtp() {
 
                         <form onSubmit={handleVerifyOtp}>
                           <div className="mb-3">
-                            <label className="verify-label">Email Address</label>
-                            <input
-                              type="email"
-                              className="form-control verify-input"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              placeholder="Enter your registered email"
-                              required
-                            />
+                            <label className="otp-label">Email Address</label>
+                            <div className="otp-input-wrap">
+                              <svg
+                                className="otp-input-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M4 7L10.94 11.76C11.57 12.19 12.43 12.19 13.06 11.76L20 7"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <rect
+                                  x="3"
+                                  y="5"
+                                  width="18"
+                                  height="14"
+                                  rx="3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                />
+                              </svg>
+
+                              <input
+                                type="email"
+                                className="form-control otp-input"
+                                placeholder="Enter your email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                              />
+                            </div>
                           </div>
 
                           <div className="mb-3">
-                            <label className="verify-label">OTP Code</label>
-                            <input
-                              type="text"
-                              className="form-control verify-input verify-otp-input"
-                              value={otp}
-                              onChange={(e) =>
-                                setOtp(
-                                  e.target.value.replace(/\D/g, "").slice(0, 6)
-                                )
-                              }
-                              placeholder="123456"
-                              required
-                              maxLength={6}
-                            />
+                            <label className="otp-label">OTP Code</label>
+                            <div className="otp-input-wrap">
+                              <svg
+                                className="otp-input-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <rect
+                                  x="3"
+                                  y="5"
+                                  width="18"
+                                  height="14"
+                                  rx="3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                />
+                                <path
+                                  d="M8 10H8.01M12 10H12.01M16 10H16.01"
+                                  stroke="currentColor"
+                                  strokeWidth="2.2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+
+                              <input
+                                type="text"
+                                className="form-control otp-input otp-code-input"
+                                placeholder="Enter OTP"
+                                value={otp}
+                                onChange={(e) =>
+                                  setOtp(e.target.value.replace(/\s/g, ""))
+                                }
+                                required
+                              />
+                            </div>
                           </div>
 
-                          <button
-                            type="submit"
-                            className="btn verify-primary-btn w-100"
-                            disabled={loading}
-                          >
-                            {loading ? "Verifying..." : "Verify Email OTP"}
-                          </button>
+                          <div className="otp-button-grid">
+                            <button
+                              type="submit"
+                              className="btn otp-submit-btn"
+                              disabled={loading}
+                            >
+                              {loading ? "Verifying..." : "Verify OTP"}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn otp-resend-btn"
+                              onClick={handleResendOtp}
+                              disabled={resending || !email.trim()}
+                            >
+                              {resending ? "Resending..." : "Resend OTP"}
+                            </button>
+                          </div>
                         </form>
 
-                        <button
-                          type="button"
-                          className="btn verify-secondary-btn w-100 mt-3"
-                          onClick={handleResendOtp}
-                          disabled={resendLoading || !email || resendTimer > 0}
-                        >
-                          {resendLoading
-                            ? "Sending New OTP..."
-                            : resendTimer > 0
-                            ? `Resend OTP in ${resendTimer}s`
-                            : "Resend OTP"}
-                        </button>
-
-                        {resendTimer > 0 && (
-                          <p className="verify-timer-text">
-                            You can request a new OTP after {resendTimer} seconds.
-                          </p>
-                        )}
-
-                        <p className="verify-footer">
+                        <p className="otp-footer-text">
                           Back to{" "}
-                          <Link to="/" className="verify-link">
+                          <Link to="/" className="otp-link">
                             Login
                           </Link>
                         </p>

@@ -49,7 +49,6 @@ function Login() {
       setMessage("");
 
       const { data } = await API.post("/auth/login", formData);
-
       saveAuthAndRedirect(data);
     } catch (error) {
       const apiMessage = error.response?.data?.message || "Login failed";
@@ -84,7 +83,6 @@ function Login() {
       const idToken = await result.user.getIdToken();
 
       const { data } = await API.post("/auth/google-login", { idToken });
-
       saveAuthAndRedirect(data);
     } catch (error) {
       console.error("GOOGLE LOGIN ERROR:", error);
@@ -337,15 +335,31 @@ function Login() {
           position: relative;
         }
 
+        .login-input-icon {
+          position: absolute;
+          top: 50%;
+          left: 16px;
+          transform: translateY(-50%);
+          width: 20px;
+          height: 20px;
+          color: #64748b;
+          pointer-events: none;
+          z-index: 2;
+        }
+
         .login-input {
           min-height: 60px;
           border-radius: 18px;
           border: 1px solid #dbe3f0;
           background: #f8fafc;
-          padding: 14px 18px;
+          padding: 14px 18px 14px 50px;
           color: #0f172a;
           font-size: 1rem;
           transition: all 0.3s ease;
+        }
+
+        .login-input.password-with-toggle {
+          padding-right: 82px;
         }
 
         .login-input:focus {
@@ -374,6 +388,7 @@ function Login() {
           padding: 8px 10px;
           border-radius: 12px;
           transition: all 0.25s ease;
+          z-index: 3;
         }
 
         .password-toggle-btn:hover {
@@ -424,8 +439,30 @@ function Login() {
 
         .login-google-btn {
           border: 1px solid #dbe3f0;
-          background: #ffffff;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
           color: #0f172a;
+          box-shadow:
+            0 10px 24px rgba(15, 23, 42, 0.06),
+            inset 0 1px 0 rgba(255,255,255,0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .login-google-btn::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.7) 45%, transparent 100%);
+          transform: translateX(-120%);
+          transition: transform 0.7s ease;
+        }
+
+        .login-google-btn:hover::before {
+          transform: translateX(120%);
         }
 
         .login-submit-btn:hover:not(:disabled),
@@ -433,10 +470,58 @@ function Login() {
           transform: translateY(-2px) scale(1.01);
         }
 
+        .login-google-btn:hover:not(:disabled) {
+          border-color: #cbd5e1;
+          box-shadow:
+            0 16px 30px rgba(15, 23, 42, 0.10),
+            0 8px 18px rgba(59, 130, 246, 0.06);
+        }
+
         .login-submit-btn:disabled,
         .login-google-btn:disabled {
           opacity: 0.8;
           cursor: not-allowed;
+        }
+
+        .login-google-icon-wrap {
+          width: 36px;
+          height: 36px;
+          min-width: 36px;
+          border-radius: 50%;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+          position: relative;
+          z-index: 1;
+        }
+
+        .login-google-icon {
+          width: 18px;
+          height: 18px;
+          display: block;
+        }
+
+        .login-google-text {
+          position: relative;
+          z-index: 1;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .login-google-badge {
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: #475569;
+          background: #eef2ff;
+          border: 1px solid #dbeafe;
+          padding: 5px 9px;
+          border-radius: 999px;
         }
 
         .login-footer-text {
@@ -447,9 +532,34 @@ function Login() {
         }
 
         .login-divider {
+          position: relative;
+          text-align: center;
+          margin: 24px 0 18px;
+        }
+
+        .login-divider::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 0;
+          width: 100%;
           height: 1px;
           background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
-          margin: 22px 0 16px;
+          transform: translateY(-50%);
+        }
+
+        .login-divider span {
+          position: relative;
+          z-index: 1;
+          display: inline-block;
+          padding: 0 14px;
+          background: rgba(255,255,255,0.92);
+          color: #64748b;
+          font-size: 0.82rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          border-radius: 999px;
         }
 
         @keyframes floatOrb {
@@ -500,6 +610,10 @@ function Login() {
           .login-action-row {
             align-items: stretch;
             flex-direction: column;
+          }
+
+          .login-google-badge {
+            display: none;
           }
         }
       `}</style>
@@ -573,6 +687,30 @@ function Login() {
                           <div className="mb-3">
                             <label className="login-label">Email Address</label>
                             <div className="login-input-wrap">
+                              <svg
+                                className="login-input-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M4 7L10.94 11.76C11.57 12.19 12.43 12.19 13.06 11.76L20 7"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <rect
+                                  x="3"
+                                  y="5"
+                                  width="18"
+                                  height="14"
+                                  rx="3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                />
+                              </svg>
+
                               <input
                                 type="email"
                                 name="email"
@@ -588,11 +726,36 @@ function Login() {
                           <div className="mb-3">
                             <label className="login-label">Password</label>
                             <div className="login-input-wrap">
+                              <svg
+                                className="login-input-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M7 10V8a5 5 0 0110 0v2"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <rect
+                                  x="4"
+                                  y="10"
+                                  width="16"
+                                  height="10"
+                                  rx="3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                />
+                                <circle cx="12" cy="15" r="1.5" fill="currentColor" />
+                              </svg>
+
                               <input
                                 type={showPassword ? "text" : "password"}
                                 name="password"
                                 placeholder="Enter your password"
-                                className="form-control login-input pe-5"
+                                className="form-control login-input password-with-toggle"
                                 value={formData.password}
                                 onChange={handleChange}
                                 required
@@ -626,7 +789,9 @@ function Login() {
                           </button>
                         </form>
 
-                        <div className="login-divider"></div>
+                        <div className="login-divider">
+                          <span>or continue with</span>
+                        </div>
 
                         <button
                           type="button"
@@ -634,17 +799,44 @@ function Login() {
                           onClick={handleGoogleLogin}
                           disabled={googleLoading}
                         >
-                          {googleLoading
-                            ? "Continuing with Google..."
-                            : "Continue with Google"}
+                          <span className="login-google-icon-wrap">
+                            <svg
+                              className="login-google-icon"
+                              viewBox="0 0 48 48"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                fill="#FFC107"
+                                d="M43.611 20.083H42V20H24v8h11.303C33.655 32.657 29.215 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.27 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+                              />
+                              <path
+                                fill="#FF3D00"
+                                d="M6.306 14.691l6.571 4.819C14.655 16.108 18.961 13 24 13c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.27 4 24 4c-7.682 0-14.297 4.337-17.694 10.691z"
+                              />
+                              <path
+                                fill="#4CAF50"
+                                d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.143 35.091 26.715 36 24 36c-5.194 0-9.625-3.33-11.283-7.946l-6.522 5.025C9.548 39.556 16.227 44 24 44z"
+                              />
+                              <path
+                                fill="#1976D2"
+                                d="M43.611 20.083H42V20H24v8h11.303c-.792 2.238-2.231 4.166-4.094 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+                              />
+                            </svg>
+                          </span>
+
+                          <span className="login-google-text">
+                            {googleLoading
+                              ? "Continuing with Google..."
+                              : "Continue with Google"}
+                            {!googleLoading && (
+                              <span className="login-google-badge">Fast Sign-In</span>
+                            )}
+                          </span>
                         </button>
 
                         <p className="login-footer-text">
                           Don’t have an account?{" "}
-                          <Link
-                            to="/register"
-                            className="login-link fw-semibold"
-                          >
+                          <Link to="/register" className="login-link fw-semibold">
                             Register
                           </Link>
                         </p>
