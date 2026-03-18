@@ -17,6 +17,9 @@ import {
   FaBell,
   FaTimes,
   FaUserCog,
+  FaCheckCircle,
+  FaReply,
+  FaInfo,
 } from "react-icons/fa";
 import { HiMiniBars3BottomRight } from "react-icons/hi2";
 
@@ -88,13 +91,51 @@ function Navbar() {
     });
   };
 
+  const getNotificationIcon = (type) => {
+    if (type === "contact_reply" || type === "admin_reply") {
+      return <FaReply />;
+    }
+
+    if (type === "system") {
+      return <FaCheckCircle />;
+    }
+
+    return <FaInfo />;
+  };
+
+  const getNotificationCardClass = (type, read) => {
+    const unreadClass = read ? "" : " unread";
+
+    if (type === "contact_reply" || type === "admin_reply") {
+      return `internovatech-notification-item contact-reply${unreadClass}`;
+    }
+
+    if (type === "system") {
+      return `internovatech-notification-item system${unreadClass}`;
+    }
+
+    return `internovatech-notification-item general${unreadClass}`;
+  };
+
+  const getNotificationActionLink = (item) => {
+    if (
+      item?.type === "contact_reply" ||
+      item?.type === "admin_reply" ||
+      item?.metadata?.contactMessageId
+    ) {
+      return "/contact";
+    }
+
+    return null;
+  };
+
   const fetchNotifications = async () => {
     if (!token) return;
 
     try {
       setNotificationsLoading(true);
       const { data } = await API.get("/auth/notifications");
-      const items = data?.notifications || [];
+      const items = Array.isArray(data?.notifications) ? data.notifications : [];
       setNotifications(items);
       setUnreadCount(items.filter((item) => !item.read).length);
     } catch (error) {
@@ -128,6 +169,16 @@ function Navbar() {
       if (unreadCount > 0) {
         await markNotificationsAsRead();
       }
+    }
+  };
+
+  const handleNotificationClick = (item) => {
+    const targetPath = getNotificationActionLink(item);
+    setNotificationsOpen(false);
+    closeMobileMenu();
+
+    if (targetPath) {
+      navigate(targetPath);
     }
   };
 
@@ -174,7 +225,7 @@ function Navbar() {
   }, []);
 
   const notificationPreview = useMemo(() => {
-    return notifications.slice(0, 6);
+    return notifications.slice(0, 8);
   }, [notifications]);
 
   return (
@@ -335,7 +386,7 @@ function Navbar() {
           position: absolute;
           top: calc(100% + 12px);
           right: 0;
-          width: 340px;
+          width: 380px;
           max-width: calc(100vw - 24px);
           background: rgba(255,255,255,0.98);
           backdrop-filter: blur(18px);
@@ -348,19 +399,39 @@ function Navbar() {
           z-index: 1200;
         }
 
+        .internovatech-notification-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+
         .internovatech-notification-title {
           font-size: 0.98rem;
           font-weight: 800;
           color: #0f172a;
-          margin-bottom: 12px;
+          margin-bottom: 0;
+        }
+
+        .internovatech-notification-count {
+          font-size: 0.76rem;
+          font-weight: 800;
+          color: #2563eb;
+          background: #eff6ff;
+          border: 1px solid #dbeafe;
+          padding: 6px 10px;
+          border-radius: 999px;
+          flex-shrink: 0;
         }
 
         .internovatech-notification-list {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          max-height: 360px;
+          max-height: 400px;
           overflow-y: auto;
+          padding-right: 2px;
         }
 
         .internovatech-notification-item {
@@ -368,11 +439,72 @@ function Navbar() {
           border: 1px solid #e2e8f0;
           background: #f8fafc;
           padding: 12px;
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          transition: all 0.25s ease;
+          -webkit-transition: all 0.25s ease;
+        }
+
+        .internovatech-notification-item.clickable {
+          cursor: pointer;
+        }
+
+        .internovatech-notification-item.clickable:hover {
+          transform: translateY(-1px);
+          -webkit-transform: translateY(-1px);
+          box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+          -webkit-box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
         }
 
         .internovatech-notification-item.unread {
           background: #eff6ff;
           border-color: #bfdbfe;
+        }
+
+        .internovatech-notification-item.contact-reply {
+          background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+          border-color: #bfdbfe;
+        }
+
+        .internovatech-notification-item.system {
+          background: linear-gradient(135deg, #ecfdf5 0%, #f7fff9 100%);
+          border-color: #bbf7d0;
+        }
+
+        .internovatech-notification-item.general {
+          background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        }
+
+        .internovatech-notification-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 0.95rem;
+        }
+
+        .internovatech-notification-item.contact-reply .internovatech-notification-icon {
+          background: #dbeafe;
+          color: #1d4ed8;
+        }
+
+        .internovatech-notification-item.system .internovatech-notification-icon {
+          background: #dcfce7;
+          color: #16a34a;
+        }
+
+        .internovatech-notification-item.general .internovatech-notification-icon {
+          background: #e2e8f0;
+          color: #475569;
+        }
+
+        .internovatech-notification-body {
+          min-width: 0;
+          flex: 1;
         }
 
         .internovatech-notification-item-title {
@@ -386,13 +518,37 @@ function Navbar() {
           font-size: 0.84rem;
           line-height: 1.6;
           color: #64748b;
-          margin-bottom: 4px;
+          margin-bottom: 6px;
           word-break: break-word;
+          white-space: pre-wrap;
+        }
+
+        .internovatech-notification-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
         .internovatech-notification-time {
           font-size: 0.76rem;
           color: #94a3b8;
+        }
+
+        .internovatech-notification-link {
+          border: none;
+          background: transparent;
+          padding: 0;
+          color: #2563eb;
+          font-size: 0.78rem;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .internovatech-notification-link:hover {
+          color: #1d4ed8;
+          text-decoration: underline;
         }
 
         .internovatech-navbar-collapse {
@@ -823,7 +979,7 @@ function Navbar() {
           .internovatech-notification-dropdown {
             right: 0;
             left: auto;
-            width: min(340px, calc(100vw - 24px));
+            width: min(360px, calc(100vw - 24px));
           }
 
           .internovatech-desktop-admin-link {
@@ -851,7 +1007,7 @@ function Navbar() {
           }
 
           .internovatech-notification-dropdown {
-            width: min(320px, calc(100vw - 20px));
+            width: min(330px, calc(100vw - 20px));
           }
         }
 
@@ -883,6 +1039,10 @@ function Navbar() {
             width: 42px;
             height: 42px;
             border-radius: 13px;
+          }
+
+          .internovatech-notification-dropdown {
+            width: min(320px, calc(100vw - 16px));
           }
         }
       `}</style>
@@ -925,40 +1085,95 @@ function Navbar() {
 
                     {notificationsOpen && (
                       <div className="internovatech-notification-dropdown">
-                        <div className="internovatech-notification-title">
-                          Notifications
+                        <div className="internovatech-notification-header">
+                          <div className="internovatech-notification-title">
+                            Notifications
+                          </div>
+                          <div className="internovatech-notification-count">
+                            {notifications.length} Total
+                          </div>
                         </div>
 
                         <div className="internovatech-notification-list">
                           {notificationsLoading ? (
-                            <div className="internovatech-notification-item">
-                              <div className="internovatech-notification-item-text">
-                                Loading notifications...
+                            <div className="internovatech-notification-item general">
+                              <div className="internovatech-notification-icon">
+                                <FaBell />
+                              </div>
+                              <div className="internovatech-notification-body">
+                                <div className="internovatech-notification-item-text">
+                                  Loading notifications...
+                                </div>
                               </div>
                             </div>
                           ) : notificationPreview.length > 0 ? (
-                            notificationPreview.map((item) => (
-                              <div
-                                key={item._id}
-                                className={`internovatech-notification-item ${
-                                  item.read ? "" : "unread"
-                                }`}
-                              >
-                                <div className="internovatech-notification-item-title">
-                                  {item.title || "Notification"}
+                            notificationPreview.map((item) => {
+                              const targetPath = getNotificationActionLink(item);
+
+                              return (
+                                <div
+                                  key={item._id}
+                                  className={`${getNotificationCardClass(
+                                    item.type,
+                                    item.read
+                                  )}${targetPath ? " clickable" : ""}`}
+                                  onClick={() => targetPath && handleNotificationClick(item)}
+                                  role={targetPath ? "button" : undefined}
+                                  tabIndex={targetPath ? 0 : undefined}
+                                  onKeyDown={(e) => {
+                                    if (
+                                      targetPath &&
+                                      (e.key === "Enter" || e.key === " ")
+                                    ) {
+                                      e.preventDefault();
+                                      handleNotificationClick(item);
+                                    }
+                                  }}
+                                >
+                                  <div className="internovatech-notification-icon">
+                                    {getNotificationIcon(item.type)}
+                                  </div>
+
+                                  <div className="internovatech-notification-body">
+                                    <div className="internovatech-notification-item-title">
+                                      {item.title || "Notification"}
+                                    </div>
+
+                                    <div className="internovatech-notification-item-text">
+                                      {item.message || "No message"}
+                                    </div>
+
+                                    <div className="internovatech-notification-footer">
+                                      <div className="internovatech-notification-time">
+                                        {formatDateTime(item.createdAt)}
+                                      </div>
+
+                                      {targetPath ? (
+                                        <button
+                                          type="button"
+                                          className="internovatech-notification-link"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleNotificationClick(item);
+                                          }}
+                                        >
+                                          Open
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="internovatech-notification-item-text">
-                                  {item.message || "No message"}
-                                </div>
-                                <div className="internovatech-notification-time">
-                                  {formatDateTime(item.createdAt)}
-                                </div>
-                              </div>
-                            ))
+                              );
+                            })
                           ) : (
-                            <div className="internovatech-notification-item">
-                              <div className="internovatech-notification-item-text">
-                                No notifications yet.
+                            <div className="internovatech-notification-item general">
+                              <div className="internovatech-notification-icon">
+                                <FaBell />
+                              </div>
+                              <div className="internovatech-notification-body">
+                                <div className="internovatech-notification-item-text">
+                                  No notifications yet.
+                                </div>
                               </div>
                             </div>
                           )}

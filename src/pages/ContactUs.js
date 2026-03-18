@@ -10,6 +10,8 @@ function ContactUs() {
     }
   }, []);
 
+  const token = localStorage.getItem("token");
+
   const [formData, setFormData] = useState({
     name: storedUser?.name || "",
     email: storedUser?.email || "",
@@ -18,6 +20,11 @@ function ContactUs() {
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [contactThreads, setContactThreads] = useState([]);
+  const [selectedThreadId, setSelectedThreadId] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState({});
+
   const [toast, setToast] = useState({
     show: false,
     type: "success",
@@ -79,12 +86,93 @@ function ContactUs() {
     }, 3000);
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusBadgeClass = (status) => {
+    if (status === "new") return "contact-v61-status-badge new";
+    if (status === "replied") return "contact-v61-status-badge replied";
+    if (status === "user_replied") return "contact-v61-status-badge user-replied";
+    return "contact-v61-status-badge closed";
+  };
+
+  const getStatusLabel = (status) => {
+    if (status === "new") return "New";
+    if (status === "replied") return "Admin Replied";
+    if (status === "user_replied") return "You Replied";
+    return "Closed";
+  };
+
+  const fetchMyThreads = async () => {
+    if (!token) {
+      setContactThreads([]);
+      setSelectedThreadId("");
+      return;
+    }
+
+    try {
+      setMessagesLoading(true);
+      const { data } = await API.get("/contact/my");
+      const items = Array.isArray(data?.items) ? data.items : [];
+
+      setContactThreads(items);
+
+      setReplyDrafts((prev) => {
+        const nextDrafts = { ...prev };
+        items.forEach((item) => {
+          if (!nextDrafts[item._id]) {
+            nextDrafts[item._id] = "";
+          }
+        });
+        return nextDrafts;
+      });
+
+      setSelectedThreadId((prev) => {
+        if (prev && items.some((item) => item._id === prev)) return prev;
+        return items[0]?._id || "";
+      });
+    } catch (error) {
+      console.error("Failed to fetch contact threads:", error);
+      showToast(
+        "error",
+        error?.response?.data?.message || "Failed to load your messages."
+      );
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchMyThreads();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleReplyDraftChange = (messageId, value) => {
+    setReplyDrafts((prev) => ({
+      ...prev,
+      [messageId]: value,
     }));
   };
 
@@ -143,6 +231,10 @@ function ContactUs() {
         subject: "",
         message: "",
       });
+
+      if (token) {
+        await fetchMyThreads();
+      }
     } catch (error) {
       console.error("Contact message submit failed:", error);
 
@@ -154,6 +246,51 @@ function ContactUs() {
       setSubmitting(false);
     }
   };
+
+  const handleReplySubmit = async (messageId) => {
+    const replyMessage = (replyDrafts[messageId] || "").trim();
+
+    if (!replyMessage) {
+      showToast("error", "Please write your reply message.");
+      return;
+    }
+
+    if (replyMessage.length < 3) {
+      showToast("error", "Reply should be at least 3 characters.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const { data } = await API.post(`/contact/my/${messageId}/reply`, {
+        message: replyMessage,
+      });
+
+      showToast(
+        "success",
+        data?.message || "Your reply has been sent successfully."
+      );
+
+      setReplyDrafts((prev) => ({
+        ...prev,
+        [messageId]: "",
+      }));
+
+      await fetchMyThreads();
+    } catch (error) {
+      console.error("Reply submit failed:", error);
+      showToast(
+        "error",
+        error?.response?.data?.message || "Failed to send your reply."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const selectedThread =
+    contactThreads.find((item) => item._id === selectedThreadId) || null;
 
   return (
     <>
@@ -388,6 +525,10 @@ function ContactUs() {
           padding-top: 14px;
         }
 
+        .contact-v61-reply-textarea {
+          min-height: 120px;
+        }
+
         .contact-v61-input:focus,
         .contact-v61-textarea:focus {
           border-color: #60a5fa;
@@ -402,7 +543,8 @@ function ContactUs() {
           cursor: not-allowed;
         }
 
-        .contact-v61-submit {
+        .contact-v61-submit,
+        .contact-v61-reply-btn {
           min-height: 56px;
           border-radius: 18px;
           font-weight: 900;
@@ -419,13 +561,15 @@ function ContactUs() {
           -webkit-transition: all 0.32s ease;
         }
 
-        .contact-v61-submit:hover {
+        .contact-v61-submit:hover,
+        .contact-v61-reply-btn:hover {
           transform: translateY(-2px);
           -webkit-transform: translateY(-2px);
           color: #fff;
         }
 
-        .contact-v61-submit:disabled {
+        .contact-v61-submit:disabled,
+        .contact-v61-reply-btn:disabled {
           opacity: 0.75;
           cursor: not-allowed;
           transform: none !important;
@@ -477,6 +621,198 @@ function ContactUs() {
           margin-bottom: 0;
         }
 
+        .contact-v61-thread-layout {
+          display: grid;
+          grid-template-columns: 320px minmax(0, 1fr);
+          gap: 18px;
+          margin-top: 28px;
+        }
+
+        .contact-v61-thread-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-height: 720px;
+          overflow-y: auto;
+        }
+
+        .contact-v61-thread-item {
+          border: 1px solid #e2e8f0;
+          border-radius: 20px;
+          background: #ffffff;
+          padding: 16px;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          -webkit-transition: all 0.25s ease;
+        }
+
+        .contact-v61-thread-item:hover {
+          transform: translateY(-2px);
+          -webkit-transform: translateY(-2px);
+          box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+          -webkit-box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+        }
+
+        .contact-v61-thread-item.active {
+          background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+          border-color: #93c5fd;
+          box-shadow: 0 12px 28px rgba(37,99,235,0.10);
+          -webkit-box-shadow: 0 12px 28px rgba(37,99,235,0.10);
+        }
+
+        .contact-v61-thread-subject {
+          font-size: 1rem;
+          font-weight: 900;
+          color: #0f172a;
+          margin-bottom: 8px;
+        }
+
+        .contact-v61-thread-preview {
+          font-size: 0.92rem;
+          color: #64748b;
+          line-height: 1.7;
+          margin-bottom: 10px;
+        }
+
+        .contact-v61-thread-meta {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .contact-v61-status-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 7px 12px;
+          border-radius: 999px;
+          font-size: 0.75rem;
+          font-weight: 800;
+          border: 1px solid transparent;
+        }
+
+        .contact-v61-status-badge.new {
+          background: #fef2f2;
+          color: #dc2626;
+          border-color: #fecaca;
+        }
+
+        .contact-v61-status-badge.replied {
+          background: #ecfdf5;
+          color: #16a34a;
+          border-color: #bbf7d0;
+        }
+
+        .contact-v61-status-badge.user-replied {
+          background: #fffbeb;
+          color: #d97706;
+          border-color: #fde68a;
+        }
+
+        .contact-v61-status-badge.closed {
+          background: #f8fafc;
+          color: #475569;
+          border-color: #e2e8f0;
+        }
+
+        .contact-v61-thread-time {
+          font-size: 0.76rem;
+          color: #94a3b8;
+          font-weight: 700;
+        }
+
+        .contact-v61-conversation-card {
+          border: 1px solid #e2e8f0;
+          border-radius: 24px;
+          background: rgba(255,255,255,0.94);
+          padding: 20px;
+          min-height: 100%;
+        }
+
+        .contact-v61-conversation-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          margin-bottom: 18px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .contact-v61-conversation-title {
+          font-size: 1.25rem;
+          font-weight: 900;
+          color: #0f172a;
+          margin-bottom: 6px;
+        }
+
+        .contact-v61-conversation-subtext {
+          color: #64748b;
+          line-height: 1.7;
+          margin-bottom: 0;
+        }
+
+        .contact-v61-message-bubble {
+          border-radius: 22px;
+          padding: 18px;
+          margin-bottom: 16px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .contact-v61-message-bubble.user {
+          background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+          border-color: #bfdbfe;
+        }
+
+        .contact-v61-message-bubble.admin {
+          background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+          border-color: #bbf7d0;
+        }
+
+        .contact-v61-bubble-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 10px;
+        }
+
+        .contact-v61-bubble-role {
+          font-size: 0.86rem;
+          font-weight: 900;
+          color: #0f172a;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .contact-v61-bubble-time {
+          font-size: 0.78rem;
+          color: #64748b;
+          font-weight: 700;
+        }
+
+        .contact-v61-bubble-text {
+          color: #334155;
+          line-height: 1.9;
+          margin-bottom: 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        .contact-v61-empty-box {
+          border: 1px dashed #cbd5e1;
+          border-radius: 24px;
+          background: #f8fafc;
+          padding: 28px;
+          text-align: center;
+          color: #64748b;
+          line-height: 1.8;
+        }
+
         @keyframes contactV61Float {
           0%, 100% {
             transform: translateY(0px) translateX(0px);
@@ -492,6 +828,12 @@ function ContactUs() {
           }
           50% {
             -webkit-transform: translateY(-18px) translateX(10px);
+          }
+        }
+
+        @media (max-width: 1199px) {
+          .contact-v61-thread-layout {
+            grid-template-columns: 1fr;
           }
         }
 
@@ -521,7 +863,8 @@ function ContactUs() {
 
           .contact-v61-hero,
           .contact-v61-card,
-          .contact-v61-band-inner {
+          .contact-v61-band-inner,
+          .contact-v61-conversation-card {
             padding: 22px;
             border-radius: 22px;
           }
@@ -682,6 +1025,155 @@ function ContactUs() {
               </div>
             </div>
           </div>
+
+          {token && (
+            <section className="contact-v61-thread-layout">
+              <div className="contact-v61-card">
+                <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                  <div>
+                    <h2 className="contact-v61-card-title mb-1">My Support Messages</h2>
+                    <p className="contact-v61-card-text">
+                      Track your submitted messages and admin replies.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary rounded-pill px-3"
+                    onClick={fetchMyThreads}
+                    disabled={messagesLoading}
+                  >
+                    {messagesLoading ? "Refreshing..." : "Refresh"}
+                  </button>
+                </div>
+
+                <div className="contact-v61-thread-list">
+                  {messagesLoading ? (
+                    <div className="contact-v61-empty-box">
+                      Loading your support messages...
+                    </div>
+                  ) : contactThreads.length > 0 ? (
+                    contactThreads.map((item) => (
+                      <div
+                        key={item._id}
+                        className={`contact-v61-thread-item ${
+                          selectedThreadId === item._id ? "active" : ""
+                        }`}
+                        onClick={() => setSelectedThreadId(item._id)}
+                      >
+                        <div className="contact-v61-thread-subject">
+                          {item.subject || "No Subject"}
+                        </div>
+
+                        <div className="contact-v61-thread-preview">
+                          {(item.message || "").slice(0, 110)}
+                          {(item.message || "").length > 110 ? "..." : ""}
+                        </div>
+
+                        <div className="contact-v61-thread-meta">
+                          <span className={getStatusBadgeClass(item.status)}>
+                            {getStatusLabel(item.status)}
+                          </span>
+                          <span className="contact-v61-thread-time">
+                            {formatDateTime(item.updatedAt || item.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="contact-v61-empty-box">
+                      You have not started any support conversation yet.
+                      <br />
+                      Submit a message above and it will appear here.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="contact-v61-card">
+                <h2 className="contact-v61-card-title">Conversation Details</h2>
+                <p className="contact-v61-card-text mb-4">
+                  Open any thread to read your message and admin response.
+                </p>
+
+                {selectedThread ? (
+                  <div className="contact-v61-conversation-card">
+                    <div className="contact-v61-conversation-header">
+                      <div>
+                        <h3 className="contact-v61-conversation-title">
+                          {selectedThread.subject || "No Subject"}
+                        </h3>
+                        <p className="contact-v61-conversation-subtext">
+                          Created on {formatDateTime(selectedThread.createdAt)}
+                        </p>
+                      </div>
+
+                      <span className={getStatusBadgeClass(selectedThread.status)}>
+                        {getStatusLabel(selectedThread.status)}
+                      </span>
+                    </div>
+
+                    <div className="contact-v61-message-bubble user">
+                      <div className="contact-v61-bubble-head">
+                        <span className="contact-v61-bubble-role">Your Message</span>
+                        <span className="contact-v61-bubble-time">
+                          {formatDateTime(selectedThread.createdAt)}
+                        </span>
+                      </div>
+                      <p className="contact-v61-bubble-text">
+                        {selectedThread.message || "No message content"}
+                      </p>
+                    </div>
+
+                    {selectedThread.adminReply?.message ? (
+                      <div className="contact-v61-message-bubble admin">
+                        <div className="contact-v61-bubble-head">
+                          <span className="contact-v61-bubble-role">Admin Reply</span>
+                          <span className="contact-v61-bubble-time">
+                            {formatDateTime(selectedThread.adminReply.repliedAt)}
+                          </span>
+                        </div>
+                        <p className="contact-v61-bubble-text">
+                          {selectedThread.adminReply.message}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="contact-v61-empty-box mb-3">
+                        No admin reply yet. You will also receive a notification
+                        when support replies.
+                      </div>
+                    )}
+
+                    <div className="mt-4">
+                      <label className="form-label fw-bold">Send Follow-up Reply</label>
+                      <textarea
+                        className="form-control contact-v61-textarea contact-v61-reply-textarea mb-3"
+                        placeholder="Write your follow-up reply here..."
+                        value={replyDrafts[selectedThread._id] || ""}
+                        onChange={(e) =>
+                          handleReplyDraftChange(selectedThread._id, e.target.value)
+                        }
+                        disabled={submitting}
+                      />
+
+                      <button
+                        type="button"
+                        className="btn contact-v61-reply-btn w-100"
+                        onClick={() => handleReplySubmit(selectedThread._id)}
+                        disabled={submitting}
+                      >
+                        {submitting ? "Sending Reply..." : "Send Reply"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="contact-v61-empty-box">
+                    Select a support thread from the left side to see full details.
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           <section className="contact-v61-band">
             <div className="contact-v61-band-inner">

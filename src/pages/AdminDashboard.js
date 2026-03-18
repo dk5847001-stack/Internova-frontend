@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import API from "../services/api";
 import { Link } from "react-router-dom";
 import {
@@ -67,6 +67,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
   const [purchasesLoading, setPurchasesLoading] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
 
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("All");
@@ -99,9 +100,23 @@ function AdminDashboard() {
 
   const PIE_COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#7c3aed"];
 
+  const usersSectionRef = useRef(null);
+  const purchasesSectionRef = useRef(null);
+  const messagesSectionRef = useRef(null);
+  const subscribersSectionRef = useRef(null);
+
   useEffect(() => {
     document.title = "Admin Dashboard | InternovaTech";
   }, []);
+
+  const scrollToSection = (ref) => {
+    if (ref?.current) {
+      ref.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -235,7 +250,16 @@ function AdminDashboard() {
 
   const exportMessagesCsv = () => {
     const rows = [
-      ["Name", "Email", "Subject", "Status", "Created At", "Updated At", "Message"],
+      [
+        "Name",
+        "Email",
+        "Subject",
+        "Status",
+        "Created At",
+        "Updated At",
+        "Message",
+        "Admin Reply",
+      ],
       ...contactMessages.map((item) => [
         item.name || "",
         item.email || "",
@@ -244,6 +268,7 @@ function AdminDashboard() {
         formatDateTime(item.createdAt),
         formatDateTime(item.updatedAt),
         item.message || "",
+        item.adminReply?.message || "",
       ]),
     ];
 
@@ -670,31 +695,47 @@ function AdminDashboard() {
 
   const handleReplyToMessage = async (messageId) => {
     try {
-      if (!replyMessage.trim()) {
+      const cleanReply = replyMessage.trim();
+
+      if (!cleanReply) {
         showToast("error", "Please enter a reply message");
         return;
       }
 
+      setSendingReply(true);
+
       const { data } = await API.post(
         `/admin/contact-messages/${messageId}/reply`,
         {
-          replyMessage: replyMessage.trim(),
+          replyMessage: cleanReply,
         }
       );
 
+      const updatedItem = data?.item || null;
+
+      if (updatedItem) {
+        setSelectedContactMessage(updatedItem);
+        setContactMessages((prev) =>
+          prev.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+        );
+        setRecentMessages((prev) =>
+          prev.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+        );
+      }
+
       showToast("success", data?.message || "Reply sent successfully");
-      setReplyingMessageId("");
-      setReplyMessage("");
-      await Promise.all([
-        fetchContactMessages({ page: contactPage }),
-        fetchOverview(),
-      ]);
+      setReplyingMessageId(messageId);
+      setReplyMessage(updatedItem?.adminReply?.message || cleanReply);
+
+      await fetchOverview();
     } catch (error) {
       console.error("Reply to message failed:", error);
       showToast(
         "error",
         error?.response?.data?.message || "Failed to send reply"
       );
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -1004,6 +1045,7 @@ function AdminDashboard() {
             0 24px 70px rgba(15, 23, 42, 0.14),
             0 8px 24px rgba(59,130,246,0.08);
           border-radius: 28px;
+          scroll-margin-top: 100px;
         }
         .admin-section-title {
           font-size: 1.35rem;
@@ -1166,6 +1208,11 @@ function AdminDashboard() {
           flex-wrap: wrap;
           margin-top: 18px;
         }
+        .admin-hero-links {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
         @keyframes adminDashboardFloat {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           50% { transform: translateY(-18px) translateX(10px); }
@@ -1241,10 +1288,43 @@ function AdminDashboard() {
                 </div>
 
                 <div className="col-lg-4">
-                  <div className="d-grid gap-3">
+                  <div className="admin-hero-links">
                     <Link to="/admin/internships" className="btn btn-light admin-action-btn">
                       Manage Internships
                     </Link>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline-light admin-action-btn"
+                      onClick={() => scrollToSection(usersSectionRef)}
+                    >
+                      View Users
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline-light admin-action-btn"
+                      onClick={() => scrollToSection(purchasesSectionRef)}
+                    >
+                      View Purchases
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline-light admin-action-btn"
+                      onClick={() => scrollToSection(messagesSectionRef)}
+                    >
+                      View User Messages
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline-light admin-action-btn"
+                      onClick={() => scrollToSection(subscribersSectionRef)}
+                    >
+                      View Subscribers
+                    </button>
+
                     <Link to="/dashboard" className="btn btn-outline-light admin-action-btn">
                       Back to User Dashboard
                     </Link>
@@ -1399,7 +1479,10 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="admin-section-card p-4 p-md-5 mb-4">
+          <div
+            ref={usersSectionRef}
+            className="admin-section-card p-4 p-md-5 mb-4"
+          >
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
                 <h3 className="admin-section-title">Users Management</h3>
@@ -1564,7 +1647,10 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="admin-section-card p-4 p-md-5 mb-4">
+          <div
+            ref={purchasesSectionRef}
+            className="admin-section-card p-4 p-md-5 mb-4"
+          >
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
                 <h3 className="admin-section-title">Purchases Management</h3>
@@ -1810,7 +1896,10 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="admin-section-card p-4 p-md-5 mb-4">
+          <div
+            ref={messagesSectionRef}
+            className="admin-section-card p-4 p-md-5 mb-4"
+          >
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
                 <h3 className="admin-section-title">Contact Messages Inbox</h3>
@@ -1995,7 +2084,10 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="admin-section-card p-4 p-md-5 mb-4">
+          <div
+            ref={subscribersSectionRef}
+            className="admin-section-card p-4 p-md-5 mb-4"
+          >
             <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
               <div>
                 <h3 className="admin-section-title">Subscriber List</h3>
@@ -2130,6 +2222,18 @@ function AdminDashboard() {
                       <p className="admin-mini-text mb-1">
                         <strong>Email:</strong> {item.email || "N/A"}
                       </p>
+                      <p className="admin-mini-text mb-1">
+                        <strong>Message:</strong>{" "}
+                        {(item.message || "").slice(0, 120)}
+                        {(item.message || "").length > 120 ? "..." : ""}
+                      </p>
+                      {item.adminReply?.message ? (
+                        <p className="admin-mini-text mb-1">
+                          <strong>Reply:</strong>{" "}
+                          {(item.adminReply.message || "").slice(0, 100)}
+                          {(item.adminReply.message || "").length > 100 ? "..." : ""}
+                        </p>
+                      ) : null}
                       <p className="admin-mini-text mb-0">
                         <strong>Updated:</strong> {formatDateTime(item.updatedAt)}
                       </p>
@@ -2441,8 +2545,9 @@ function AdminDashboard() {
                 <button
                   className="btn btn-success admin-action-btn"
                   onClick={() => handleReplyToMessage(selectedContactMessage._id)}
+                  disabled={sendingReply}
                 >
-                  Send Reply
+                  {sendingReply ? "Sending..." : "Send Reply"}
                 </button>
 
                 <button
