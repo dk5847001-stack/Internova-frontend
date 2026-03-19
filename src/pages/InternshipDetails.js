@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import API from "../services/api";
+import API, { downloadProtectedPdf } from "../services/api";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 const API_BASE_URL =
@@ -214,7 +214,32 @@ function InternshipDetails() {
             });
 
             if (verifyRes.data.success) {
-              showToast("success", "Payment successful!");
+              showToast("success", "Payment successful! Downloading payment slip...");
+
+              const slipDownloadUrl = verifyRes?.data?.slipDownloadUrl;
+
+              if (slipDownloadUrl) {
+                try {
+                  const normalizedSlipUrl = slipDownloadUrl.startsWith("/api")
+                    ? slipDownloadUrl.replace(/^\/api/, "")
+                    : slipDownloadUrl;
+
+                  await downloadProtectedPdf(
+                    normalizedSlipUrl,
+                    `${(data.internship.title || "payment_slip")
+                      .replace(/[^a-z0-9]/gi, "_")
+                      .replace(/_+/g, "_")
+                      .replace(/^_|_$/g, "")}_payment_slip.pdf`
+                  );
+                } catch (slipError) {
+                  console.error("Payment slip auto-download failed:", slipError);
+                  showToast(
+                    "error",
+                    "Payment successful, but payment slip download failed. You can download it from My Purchases."
+                  );
+                }
+              }
+
               await checkCertificateEligibility();
               navigate("/my-purchases");
             } else {
@@ -1047,6 +1072,7 @@ function InternshipDetails() {
                     <ul className="details-v61-list">
                       <li>Program access after successful enrollment</li>
                       <li>Learning access letter download</li>
+                      <li>Premium payment slip download</li>
                       <li>Course modules and progress tracking</li>
                       <li>Mini test and retake support</li>
                       <li>Certificate generation after eligibility</li>
@@ -1057,7 +1083,7 @@ function InternshipDetails() {
                   <p className="details-v61-note">
                     After successful payment, this program will appear in My
                     Enrollments, where you can access the course, learning access
-                    letter, mini test, and certificate workflow.
+                    letter, payment slip, mini test, and certificate workflow.
                   </p>
 
                   <div className="details-v61-footer-band">

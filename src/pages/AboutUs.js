@@ -121,6 +121,11 @@ function AboutUs() {
         role: "Internship Program User",
         text: "The verification support and premium UI gave a lot more trust to the experience. It felt like a proper digital internship workspace instead of just another random learning page.",
       },
+      {
+        name: "Akash Kumar",
+        role: "Internship Program User",
+        text: "I used this website, the platform support and premium UI gave a lot more trust to the experience. It felt like a proper digital internship workspace instead of just another random learning page.",
+      },
     ],
     []
   );
