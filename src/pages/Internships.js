@@ -2,10 +2,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import { Link, useSearchParams } from "react-router-dom";
 
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "https://api.internovatech.in/api";
+
+const BRAND_LOGO_URL = `${API_BASE_URL.replace(/\/api\/?$/, "")}/uploads/branding/logo.png`;
+
 function Internships() {
   const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const initialSearch = searchParams.get("search") || "";
   const [localSearch, setLocalSearch] = useState(initialSearch);
@@ -42,7 +48,7 @@ function Internships() {
 
   useEffect(() => {
     document.title =
-      "Online Training Programs | InternovaTech Programs and Training";
+      "Online Internships | InternovaTech Programs and Training";
 
     const metaDescription = document.querySelector('meta[name="description"]');
     const previousDescription = metaDescription?.getAttribute("content") || "";
@@ -50,7 +56,7 @@ function Internships() {
     if (metaDescription) {
       metaDescription.setAttribute(
         "content",
-        "Explore InternovaTech online Training Programs in Web Development, Data Science, Artificial Intelligence, Finance and more with structured learning, guided modules, assessments and verified certificates."
+        "Explore InternovaTech online internships in Web Development, Data Science, Artificial Intelligence, Finance and more with structured learning, guided modules, assessments and verified certificates."
       );
     }
 
@@ -72,7 +78,7 @@ function Internships() {
 
     return () => {
       document.title =
-        "InternovaTech - Online Training Programs, Certificates and Tech Training";
+        "InternovaTech - Online Internships, Certificates and Tech Training";
 
       if (metaDescription) {
         metaDescription.setAttribute("content", previousDescription);
@@ -174,7 +180,7 @@ function Internships() {
     return (
       <>
         <style>{`
-          .internova-loader-page {
+          .internova-ultra-loader-page {
             min-height: 100vh;
             background:
               radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 28%),
@@ -189,7 +195,7 @@ function Internships() {
             overflow: hidden;
           }
 
-          .internova-loader-page::before {
+          .internova-ultra-loader-page::before {
             content: "";
             position: absolute;
             inset: 0;
@@ -205,160 +211,225 @@ function Internships() {
             pointer-events: none;
           }
 
-          .internova-loader-orb {
+          .internova-ultra-loader-orb {
             position: absolute;
             border-radius: 50%;
             filter: blur(18px);
             opacity: 0.52;
             pointer-events: none;
-            animation: internovaLoaderFloat 9s ease-in-out infinite;
+            animation: internovaUltraLoaderFloat 9s ease-in-out infinite;
           }
 
-          .internova-loader-orb-1 {
-            width: 240px;
-            height: 240px;
-            top: 10%;
+          .internova-ultra-loader-orb-1 {
+            width: 260px;
+            height: 260px;
+            top: 8%;
             left: -70px;
             background: linear-gradient(135deg, rgba(29,78,216,0.22), rgba(14,165,233,0.14));
           }
 
-          .internova-loader-orb-2 {
-            width: 290px;
-            height: 290px;
-            right: -90px;
-            top: 16%;
-            background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(59,130,246,0.16));
+          .internova-ultra-loader-orb-2 {
+            width: 320px;
+            height: 320px;
+            right: -100px;
+            top: 14%;
+            background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(59,130,246,0.16));
             animation-delay: 1.4s;
           }
 
-          .internova-loader-orb-3 {
-            width: 220px;
-            height: 220px;
+          .internova-ultra-loader-orb-3 {
+            width: 240px;
+            height: 240px;
             right: 12%;
-            bottom: 7%;
+            bottom: 5%;
             background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(37,99,235,0.10));
             animation-delay: 2.2s;
           }
 
-          .internova-loader-card {
+          .internova-ultra-loader-orb-4 {
+            width: 180px;
+            height: 180px;
+            left: 10%;
+            bottom: 8%;
+            background: linear-gradient(135deg, rgba(37,99,235,0.10), rgba(255,255,255,0.18));
+            animation-delay: 2.8s;
+          }
+
+          .internova-ultra-loader-card {
             position: relative;
             z-index: 2;
             width: 100%;
-            max-width: 460px;
-            border-radius: 32px;
+            max-width: 520px;
+            border-radius: 34px;
             background:
-              linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.72) 100%);
-            border: 1px solid rgba(255,255,255,0.82);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
+              linear-gradient(135deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.75) 100%);
+            border: 1px solid rgba(255,255,255,0.86);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             box-shadow:
-              0 28px 70px rgba(15,23,42,0.10),
+              0 32px 84px rgba(15,23,42,0.10),
               0 12px 32px rgba(59,130,246,0.08);
             overflow: hidden;
           }
 
-          .internova-loader-card::before {
+          .internova-ultra-loader-card::before {
             content: "";
             position: absolute;
             inset: 0;
             background:
-              radial-gradient(circle at 20% 18%, rgba(255,255,255,0.42), transparent 18%),
+              radial-gradient(circle at 20% 18%, rgba(255,255,255,0.48), transparent 18%),
               radial-gradient(circle at 84% 74%, rgba(255,255,255,0.26), transparent 20%);
             pointer-events: none;
           }
 
-          .internova-loader-topbar {
-            height: 7px;
+          .internova-ultra-loader-topbar {
+            position: relative;
+            height: 8px;
             background: linear-gradient(135deg, #081226 0%, #102247 45%, #1d4ed8 100%);
           }
 
-          .internova-loader-body {
-            position: relative;
-            z-index: 2;
-            padding: 34px 28px 30px;
-            text-align: center;
-          }
-
-          .internova-loader-brand {
-            display: inline-flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 24px;
-          }
-
-          .internova-loader-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #081226 0%, #102247 45%, #1d4ed8 100%);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 1.5rem;
-            box-shadow:
-              0 18px 30px rgba(29,78,216,0.22),
-              0 8px 18px rgba(8,18,38,0.16);
-            position: relative;
-            overflow: hidden;
-          }
-
-          .internova-loader-logo::after {
+          .internova-ultra-loader-topbar::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 55%);
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(255,255,255,0.28) 35%,
+              transparent 70%
+            );
+            animation: internovaUltraShine 2.2s linear infinite;
+          }
+
+          .internova-ultra-loader-body {
+            position: relative;
+            z-index: 2;
+            padding: 36px 30px 30px;
+            text-align: center;
+          }
+
+          .internova-ultra-loader-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+          }
+
+          .internova-ultra-loader-logo-shell {
+            position: relative;
+            width: 84px;
+            height: 84px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #081226 0%, #102247 45%, #1d4ed8 100%);
+            box-shadow:
+              0 20px 35px rgba(29,78,216,0.24),
+              0 8px 18px rgba(8,18,38,0.16);
+            overflow: hidden;
+            flex-shrink: 0;
+          }
+
+          .internova-ultra-loader-logo-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.20), transparent 58%);
             pointer-events: none;
           }
 
-          .internova-loader-brand-text {
+          .internova-ultra-loader-logo-shell::after {
+            content: "";
+            position: absolute;
+            inset: -6px;
+            border-radius: 28px;
+            border: 1px solid rgba(37,99,235,0.18);
+            filter: blur(4px);
+            pointer-events: none;
+          }
+
+          .internova-ultra-loader-logo-img {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(255,255,255,0.10));
+            position: relative;
+            z-index: 2;
+          }
+
+          .internova-ultra-loader-logo-fallback {
+            position: relative;
+            z-index: 2;
+            color: #ffffff;
+            font-size: 1.85rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+          }
+
+          .internova-ultra-loader-brand-text {
             text-align: left;
           }
 
-          .internova-loader-brand-title {
-            font-size: 1.55rem;
+          .internova-ultra-loader-brand-title {
+            font-size: 1.65rem;
             font-weight: 900;
-            line-height: 1.05;
+            line-height: 1.02;
             color: #0f172a;
             margin-bottom: 4px;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.04em;
           }
 
-          .internova-loader-brand-subtitle {
+          .internova-ultra-loader-brand-subtitle {
             color: #64748b;
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
+            font-size: 0.84rem;
+            font-weight: 800;
+            letter-spacing: 0.10em;
             text-transform: uppercase;
             margin-bottom: 0;
           }
 
-          .internova-loader-ring-wrap {
+          .internova-ultra-loader-ring-zone {
             position: relative;
-            width: 86px;
-            height: 86px;
-            margin: 0 auto 22px;
+            width: 108px;
+            height: 108px;
+            margin: 0 auto 24px;
             display: flex;
             align-items: center;
             justify-content: center;
           }
 
-          .internova-loader-ring {
-            width: 86px;
-            height: 86px;
+          .internova-ultra-loader-ring-outer,
+          .internova-ultra-loader-ring-inner {
+            position: absolute;
             border-radius: 50%;
-            border: 5px solid rgba(37,99,235,0.12);
-            border-top-color: #2563eb;
-            border-right-color: #1d4ed8;
-            animation: internovaLoaderSpin 0.95s linear infinite;
-            box-shadow: 0 10px 25px rgba(37,99,235,0.10);
           }
 
-          .internova-loader-ring-inner {
+          .internova-ultra-loader-ring-outer {
+            width: 108px;
+            height: 108px;
+            border: 5px solid rgba(37,99,235,0.10);
+            border-top-color: #2563eb;
+            border-right-color: #1d4ed8;
+            animation: internovaUltraSpin 1.05s linear infinite;
+            box-shadow: 0 12px 28px rgba(37,99,235,0.10);
+          }
+
+          .internova-ultra-loader-ring-inner {
+            width: 76px;
+            height: 76px;
+            border: 4px solid rgba(148,163,184,0.16);
+            border-bottom-color: #081226;
+            border-left-color: #1d4ed8;
+            animation: internovaUltraReverseSpin 1.4s linear infinite;
+          }
+
+          .internova-ultra-loader-core {
             position: absolute;
-            width: 52px;
-            height: 52px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             display: flex;
@@ -366,46 +437,84 @@ function Internships() {
             justify-content: center;
             color: #1d4ed8;
             font-weight: 900;
-            font-size: 1rem;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+            box-shadow:
+              inset 0 1px 0 rgba(255,255,255,0.72),
+              0 10px 22px rgba(37,99,235,0.10);
           }
 
-          .internova-loader-heading {
-            font-size: 1.3rem;
+          .internova-ultra-loader-heading {
+            font-size: 1.4rem;
             font-weight: 900;
             color: #0f172a;
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
+            margin-bottom: 9px;
+            letter-spacing: -0.03em;
           }
 
-          .internova-loader-text {
+          .internova-ultra-loader-text {
             color: #64748b;
-            line-height: 1.85;
-            margin-bottom: 20px;
+            line-height: 1.88;
+            margin-bottom: 22px;
             font-size: 0.98rem;
+            max-width: 410px;
+            margin-left: auto;
+            margin-right: auto;
           }
 
-          .internova-loader-progress {
+          .internova-ultra-loader-progress {
             width: 100%;
-            max-width: 280px;
+            max-width: 320px;
             height: 10px;
             border-radius: 999px;
             background: rgba(148,163,184,0.14);
-            margin: 0 auto 14px;
+            margin: 0 auto 16px;
             overflow: hidden;
             position: relative;
           }
 
-          .internova-loader-progress-bar {
-            width: 42%;
+          .internova-ultra-loader-progress::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+              90deg,
+              rgba(255,255,255,0.0),
+              rgba(255,255,255,0.28),
+              rgba(255,255,255,0.0)
+            );
+            animation: internovaUltraShine 1.9s linear infinite;
+          }
+
+          .internova-ultra-loader-progress-bar {
+            width: 44%;
             height: 100%;
             border-radius: 999px;
             background: linear-gradient(135deg, #081226 0%, #102247 45%, #1d4ed8 100%);
-            animation: internovaLoaderSlide 1.3s ease-in-out infinite;
+            animation: internovaUltraSlide 1.35s ease-in-out infinite;
             box-shadow: 0 8px 18px rgba(29,78,216,0.16);
           }
 
-          .internova-loader-footnote {
+          .internova-ultra-loader-pills {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 6px;
+            margin-bottom: 18px;
+          }
+
+          .internova-ultra-loader-pill {
+            padding: 9px 13px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 1px solid #dbeafe;
+            color: #0f172a;
+            font-size: 0.79rem;
+            font-weight: 800;
+            line-height: 1;
+          }
+
+          .internova-ultra-loader-footnote {
             color: #94a3b8;
             font-size: 0.84rem;
             font-weight: 700;
@@ -413,22 +522,37 @@ function Internships() {
             letter-spacing: 0.03em;
           }
 
-          @keyframes internovaLoaderSpin {
+          @keyframes internovaUltraSpin {
             to {
               transform: rotate(360deg);
             }
           }
 
-          @keyframes internovaLoaderSlide {
-            0% {
-              transform: translateX(-115%);
-            }
-            100% {
-              transform: translateX(320%);
+          @keyframes internovaUltraReverseSpin {
+            to {
+              transform: rotate(-360deg);
             }
           }
 
-          @keyframes internovaLoaderFloat {
+          @keyframes internovaUltraSlide {
+            0% {
+              transform: translateX(-120%);
+            }
+            100% {
+              transform: translateX(330%);
+            }
+          }
+
+          @keyframes internovaUltraShine {
+            0% {
+              transform: translateX(-140%);
+            }
+            100% {
+              transform: translateX(180%);
+            }
+          }
+
+          @keyframes internovaUltraLoaderFloat {
             0%, 100% {
               transform: translateY(0px) translateX(0px);
             }
@@ -438,79 +562,114 @@ function Internships() {
           }
 
           @media (max-width: 767px) {
-            .internova-loader-card {
+            .internova-ultra-loader-card {
               border-radius: 24px;
+              max-width: 100%;
             }
 
-            .internova-loader-body {
+            .internova-ultra-loader-body {
               padding: 28px 20px 24px;
             }
 
-            .internova-loader-brand {
+            .internova-ultra-loader-brand {
               gap: 12px;
               margin-bottom: 20px;
             }
 
-            .internova-loader-logo {
-              width: 54px;
-              height: 54px;
-              border-radius: 16px;
+            .internova-ultra-loader-logo-shell {
+              width: 72px;
+              height: 72px;
+              border-radius: 20px;
+            }
+
+            .internova-ultra-loader-logo-img {
+              width: 50px;
+              height: 50px;
+            }
+
+            .internova-ultra-loader-brand-title {
               font-size: 1.35rem;
             }
 
-            .internova-loader-brand-title {
-              font-size: 1.3rem;
+            .internova-ultra-loader-brand-subtitle {
+              font-size: 0.76rem;
             }
 
-            .internova-loader-heading {
-              font-size: 1.15rem;
+            .internova-ultra-loader-heading {
+              font-size: 1.16rem;
             }
 
-            .internova-loader-text {
+            .internova-ultra-loader-text {
               font-size: 0.93rem;
+            }
+
+            .internova-ultra-loader-brand-text {
+              text-align: center;
             }
           }
         `}</style>
 
-        <div className="internova-loader-page">
-          <div className="internova-loader-orb internova-loader-orb-1"></div>
-          <div className="internova-loader-orb internova-loader-orb-2"></div>
-          <div className="internova-loader-orb internova-loader-orb-3"></div>
+        <div className="internova-ultra-loader-page">
+          <div className="internova-ultra-loader-orb internova-ultra-loader-orb-1"></div>
+          <div className="internova-ultra-loader-orb internova-ultra-loader-orb-2"></div>
+          <div className="internova-ultra-loader-orb internova-ultra-loader-orb-3"></div>
+          <div className="internova-ultra-loader-orb internova-ultra-loader-orb-4"></div>
 
-          <div className="internova-loader-card">
-            <div className="internova-loader-topbar"></div>
+          <div className="internova-ultra-loader-card">
+            <div className="internova-ultra-loader-topbar"></div>
 
-            <div className="internova-loader-body">
-              <div className="internova-loader-brand">
-                <div className="internova-loader-logo">I</div>
+            <div className="internova-ultra-loader-body">
+              <div className="internova-ultra-loader-brand">
+                <div className="internova-ultra-loader-logo-shell">
+                  {!logoFailed ? (
+                    <img
+                      src={BRAND_LOGO_URL}
+                      alt="InternovaTech Logo"
+                      className="internova-ultra-loader-logo-img"
+                      onError={() => setLogoFailed(true)}
+                    />
+                  ) : (
+                    <div className="internova-ultra-loader-logo-fallback">I</div>
+                  )}
+                </div>
 
-                <div className="internova-loader-brand-text">
-                  <div className="internova-loader-brand-title">InternovaTech</div>
-                  <p className="internova-loader-brand-subtitle">
-                    Online Training Programs Platform
+                <div className="internova-ultra-loader-brand-text">
+                  <div className="internova-ultra-loader-brand-title">
+                    InternovaTech
+                  </div>
+                  <p className="internova-ultra-loader-brand-subtitle">
+                    Online Internships Platform
                   </p>
                 </div>
               </div>
 
-              <div className="internova-loader-ring-wrap">
-                <div className="internova-loader-ring"></div>
-                <div className="internova-loader-ring-inner">IT</div>
+              <div className="internova-ultra-loader-ring-zone">
+                <div className="internova-ultra-loader-ring-outer"></div>
+                <div className="internova-ultra-loader-ring-inner"></div>
+                <div className="internova-ultra-loader-core">IT</div>
               </div>
 
-              <h2 className="internova-loader-heading">
-                Loading premium Training Programs programs
+              <h2 className="internova-ultra-loader-heading">
+                Preparing premium internship programs
               </h2>
 
-              <p className="internova-loader-text">
-                We are preparing InternovaTech programs, filters, and learning
-                pathways for a smoother and more professional browsing experience.
+              <p className="internova-ultra-loader-text">
+                We are loading InternovaTech programs, categories, and guided
+                learning pathways to deliver a cleaner, faster, and more
+                professional browsing experience.
               </p>
 
-              <div className="internova-loader-progress">
-                <div className="internova-loader-progress-bar"></div>
+              <div className="internova-ultra-loader-progress">
+                <div className="internova-ultra-loader-progress-bar"></div>
               </div>
 
-              <p className="internova-loader-footnote">
+              <div className="internova-ultra-loader-pills">
+                <span className="internova-ultra-loader-pill">Guided Learning</span>
+                <span className="internova-ultra-loader-pill">Progress Tracking</span>
+                <span className="internova-ultra-loader-pill">Verified Certificates</span>
+              </div>
+
+              <p className="internova-ultra-loader-footnote">
                 Please wait while we load the latest opportunities...
               </p>
             </div>
@@ -1218,13 +1377,13 @@ function Internships() {
                 <h1 className="programs-v61-title">
                   Explore{" "}
                   <span className="programs-v61-title-accent">
-                    online Training Programs
+                    online internships
                   </span>{" "}
                   designed for practical learning and real career growth
                 </h1>
 
                 <p className="programs-v61-text">
-                  Discover premium Training Programs programs across modern domains with
+                  Discover premium internship programs across modern domains with
                   guided learning, structured progression, assessments, and
                   verified certificate support. InternovaTech helps you move
                   from exploration to validated digital achievement in one clean
@@ -1240,7 +1399,7 @@ function Internships() {
                       {internships.length}
                     </div>
                     <p className="programs-v61-stat-subtext">
-                      Available Training Programs options on the platform.
+                      Available internship options on the platform.
                     </p>
                   </div>
 
@@ -1274,7 +1433,7 @@ function Internships() {
             <div className="programs-v61-filter-head">
               <div>
                 <h2 className="programs-v61-filter-title">
-                  Discover the right Training Programs path
+                  Discover the right internship path
                 </h2>
                 <p className="programs-v61-filter-subtitle">
                   Search programs by title, branch, category, or description and
@@ -1368,7 +1527,7 @@ function Internships() {
                           item.thumbnail ||
                           "https://via.placeholder.com/400x250"
                         }
-                        alt={item.title || "InternovaTech Training Programs"}
+                        alt={item.title || "InternovaTech internship program"}
                         className="programs-v61-image"
                       />
                     </div>
@@ -1423,7 +1582,7 @@ function Internships() {
               <div className="programs-v61-empty">
                 <h3 className="programs-v61-empty-title">No Programs Found</h3>
                 <p className="programs-v61-empty-text">
-                  No Training Programs programs matched your current search or filters.
+                  No internship programs matched your current search or filters.
                   Try adjusting the query or clearing all filters to discover
                   more options.
                 </p>
@@ -1438,9 +1597,9 @@ function Internships() {
                   Ready to start learning with InternovaTech?
                 </h2>
                 <p className="programs-v61-bottom-text">
-                  Explore your preferred Training Programs domain, continue with
+                  Explore your preferred internship domain, continue with
                   structured learning, and move toward verified completion
-                  through a cleaner, more premium Training Programs experience.
+                  through a cleaner, more premium internship experience.
                 </p>
               </div>
 
