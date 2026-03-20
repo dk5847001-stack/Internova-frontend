@@ -11,7 +11,8 @@ function InternshipDetails() {
 
   const [internship, setInternship] = useState(null);
   const [selectedDuration, setSelectedDuration] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [certificateLoading, setCertificateLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
   const [certificateEligible, setCertificateEligible] = useState(false);
@@ -25,7 +26,7 @@ function InternshipDetails() {
     message: "",
   });
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "null");
   const token = localStorage.getItem("token");
 
   const showToast = (type, message) => {
@@ -47,6 +48,7 @@ function InternshipDetails() {
       {
         label: internship.duration || `${internship.durationDays || 30} Days`,
         price: internship.price || 0,
+        durationDays: internship.durationDays || 30,
       },
     ];
   }, [internship]);
@@ -178,7 +180,39 @@ function InternshipDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const goToPostPaymentDestination = (verifyData) => {
+    const redirectTo = verifyData?.redirectTo || "";
+    const purchaseInternshipId =
+      verifyData?.purchase?.internshipId || internship?._id || id;
+
+    if (redirectTo && typeof redirectTo === "string") {
+      navigate("/my-purchases", {
+        replace: true,
+        state: {
+          refreshPurchases: true,
+          justPaid: true,
+          internshipId: purchaseInternshipId,
+          redirectTo,
+          ts: Date.now(),
+        },
+      });
+      return;
+    }
+
+    navigate("/my-purchases", {
+      replace: true,
+      state: {
+        refreshPurchases: true,
+        justPaid: true,
+        internshipId: purchaseInternshipId,
+        ts: Date.now(),
+      },
+    });
+  };
+
   const handleBuyNow = async () => {
+    if (paymentLoading) return;
+
     try {
       if (!token) {
         showToast("error", "Please login first");
@@ -191,7 +225,15 @@ function InternshipDetails() {
         return;
       }
 
-      setLoading(true);
+      if (!window.Razorpay) {
+        showToast(
+          "error",
+          "Payment gateway failed to load. Please refresh and try again."
+        );
+        return;
+      }
+
+      setPaymentLoading(true);
 
       const { data } = await API.post("/payments/create-order", {
         internshipId: id,
@@ -203,7 +245,7 @@ function InternshipDetails() {
         amount: data.order.amount,
         currency: data.order.currency,
         name: "InternovaTech",
-        description: `InternovaTech - ${data.internship.title} (${data.duration.label})`,
+        description: `InternovaTech - ${data?.internship?.title || internship?.title || "Program"} (${data?.duration?.label || selectedPlan.label})`,
         order_id: data.order.id,
         handler: async function (response) {
           try {
@@ -213,10 +255,11 @@ function InternshipDetails() {
               razorpay_signature: response.razorpay_signature,
             });
 
-            if (verifyRes.data.success) {
-              showToast("success", "Payment successful! Downloading payment slip...");
+            if (verifyRes?.data?.success) {
+              const verifyData = verifyRes.data;
+              showToast("success", "Payment successful! Finalizing enrollment...");
 
-              const slipDownloadUrl = verifyRes?.data?.slipDownloadUrl;
+              const slipDownloadUrl = verifyData?.slipDownloadUrl;
 
               if (slipDownloadUrl) {
                 try {
@@ -226,22 +269,21 @@ function InternshipDetails() {
 
                   await downloadProtectedPdf(
                     normalizedSlipUrl,
-                    `${(data.internship.title || "payment_slip")
+                    `${(data?.internship?.title || internship?.title || "payment_slip")
                       .replace(/[^a-z0-9]/gi, "_")
                       .replace(/_+/g, "_")
                       .replace(/^_|_$/g, "")}_payment_slip.pdf`
                   );
                 } catch (slipError) {
                   console.error("Payment slip auto-download failed:", slipError);
-                  showToast(
-                    "error",
-                    "Payment successful, but payment slip download failed. You can download it from My Purchases."
-                  );
                 }
               }
 
               await checkCertificateEligibility();
-              navigate("/my-purchases");
+
+              setTimeout(() => {
+                goToPostPaymentDestination(verifyData);
+              }, 500);
             } else {
               showToast("error", "Payment verification failed");
             }
@@ -249,13 +291,25 @@ function InternshipDetails() {
             console.error("Verification error:", error);
             showToast(
               "error",
-              error.response?.data?.message || "Payment verification failed"
+              error?.response?.data?.message || "Payment verification failed"
             );
+          } finally {
+            setPaymentLoading(false);
           }
+        },
+        modal: {
+          ondismiss: function () {
+            setPaymentLoading(false);
+          },
         },
         prefill: {
           name: user?.name || "",
           email: user?.email || "",
+          contact: user?.phone || user?.mobile || "",
+        },
+        notes: {
+          internshipId: id,
+          durationLabel: selectedPlan.label,
         },
         theme: {
           color: "#1d4ed8",
@@ -263,19 +317,30 @@ function InternshipDetails() {
       };
 
       const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (response) {
+        console.error("Razorpay payment failed:", response);
+        showToast(
+          "error",
+          response?.error?.description || "Payment failed. Please try again."
+        );
+        setPaymentLoading(false);
+      });
+
       rzp.open();
     } catch (error) {
       console.error("Payment start error:", error);
       showToast(
         "error",
-        error.response?.data?.message || "Failed to initiate payment"
+        error?.response?.data?.message || "Failed to initiate payment"
       );
-    } finally {
-      setLoading(false);
+      setPaymentLoading(false);
     }
   };
 
   const handleGenerateCertificate = async () => {
+    if (certificateLoading) return;
+
     try {
       if (!token) {
         showToast("error", "Please login first");
@@ -283,7 +348,7 @@ function InternshipDetails() {
         return;
       }
 
-      setLoading(true);
+      setCertificateLoading(true);
 
       const { data } = await API.post(`/certificates/generate/${id}`, {});
 
@@ -308,10 +373,10 @@ function InternshipDetails() {
       console.error("Certificate generate error:", error);
       showToast(
         "error",
-        error.response?.data?.message || "Failed to generate certificate"
+        error?.response?.data?.message || "Failed to generate certificate"
       );
     } finally {
-      setLoading(false);
+      setCertificateLoading(false);
     }
   };
 
@@ -715,6 +780,14 @@ function InternshipDetails() {
           -webkit-transform: translateY(-2px);
         }
 
+        .details-v61-btn-buy:disabled,
+        .details-v61-btn-certificate:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+          transform: none !important;
+          -webkit-transform: none !important;
+        }
+
         .details-v61-btn-certificate {
           color: #fff;
           background: linear-gradient(135deg, #081226 0%, #102247 45%, #1d4ed8 100%);
@@ -999,6 +1072,7 @@ function InternshipDetails() {
                       className="form-select details-v61-select"
                       value={selectedPlan?.label || selectedDuration}
                       onChange={(e) => setSelectedDuration(e.target.value)}
+                      disabled={paymentLoading}
                     >
                       {normalizedDurations.map((item, index) => (
                         <option key={index} value={item.label}>
@@ -1047,18 +1121,18 @@ function InternshipDetails() {
                     <button
                       className="details-v61-btn-buy"
                       onClick={handleBuyNow}
-                      disabled={loading}
+                      disabled={paymentLoading || certificateLoading}
                     >
-                      {loading ? "Processing..." : "Enroll Now"}
+                      {paymentLoading ? "Processing..." : "Enroll Now"}
                     </button>
 
                     {!checkingCertificate && certificateEligible && (
                       <button
                         className="details-v61-btn-certificate"
                         onClick={handleGenerateCertificate}
-                        disabled={loading}
+                        disabled={paymentLoading || certificateLoading}
                       >
-                        {loading
+                        {certificateLoading
                           ? "Processing..."
                           : certificateExists
                           ? "Download Certificate"

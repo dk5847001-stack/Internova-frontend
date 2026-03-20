@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API, { downloadProtectedPdf } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function MyPurchases() {
   const [purchases, setPurchases] = useState([]);
@@ -15,6 +15,7 @@ function MyPurchases() {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -105,9 +106,11 @@ function MyPurchases() {
     }
   };
 
-  const fetchPurchases = async () => {
+  const fetchPurchases = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
 
       const { data } = await API.get("/purchases/my-purchases");
       const purchaseList = data.purchases || [];
@@ -118,13 +121,31 @@ function MyPurchases() {
       console.error("Failed to fetch purchases:", error);
       showToast("error", "Failed to fetch purchases");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchPurchases();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.refreshPurchases || location.state?.justPaid) {
+      fetchPurchases({ silent: false });
+
+      if (location.state?.justPaid) {
+        showToast("success", "Enrollment updated successfully");
+      }
+
+      navigate(location.pathname, {
+        replace: true,
+        state: {},
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const handleDownloadOfferLetter = async (item) => {
     try {
@@ -183,6 +204,14 @@ function MyPurchases() {
       return (
         <span className="myp-v2-status-pill myp-v2-status-pending">
           ● PENDING
+        </span>
+      );
+    }
+
+    if (normalized === "created") {
+      return (
+        <span className="myp-v2-status-pill myp-v2-status-pending">
+          ● CREATED
         </span>
       );
     }
