@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API, { downloadProtectedPdf } from "../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
+import BrandLoader from "../components/BrandLoader";
 
 function MyPurchases() {
   const [purchases, setPurchases] = useState([]);
@@ -189,6 +190,8 @@ function MyPurchases() {
     }
   };
 
+
+
   const getStatusBadge = (status) => {
     const normalized = String(status || "").toLowerCase();
 
@@ -234,22 +237,9 @@ function MyPurchases() {
       .length;
   }, [purchases, statusMap]);
 
-  if (loading) {
-    return (
-      <div
-        className="min-vh-100 d-flex align-items-center justify-content-center"
-        style={{
-          background:
-            "linear-gradient(135deg, #f8fbff 0%, #eef4ff 45%, #f8fbff 100%)",
-        }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status"></div>
-          <div className="fw-bold text-dark">Loading your premium dashboard...</div>
-        </div>
-      </div>
-    );
-  }
+ if (loading) {
+  return <BrandLoader title="Loading programs" />;
+}
 
   return (
     <>
