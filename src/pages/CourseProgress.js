@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BrandLoader from "../components/BrandLoader";
 
 import CourseHeader from "../components/CourseHeader";
 import CourseProgressCard from "../components/CourseProgressCard";
@@ -414,7 +415,7 @@ function CourseProgress() {
       showToast(
         "success",
         "Premium Access Activated",
-        "All locked modules are now unlocked successfully for this Training Programs."
+        "All locked modules are now unlocked successfully for this Internship Programs."
       );
     } catch (err) {
       console.error("Unlock all modules failed:", err);
@@ -431,24 +432,9 @@ function CourseProgress() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="course-progress-shell">
-        <div className="course-bg-orb orb-one" />
-        <div className="course-bg-orb orb-two" />
-        <div className="course-bg-orb orb-three" />
-
-        <div className="course-progress-page full-width-course-page">
-          <div className="course-state-card loading-state">
-            <div className="state-shimmer state-shimmer-lg" />
-            <div className="state-shimmer state-shimmer-md" />
-            <div className="state-shimmer state-shimmer-sm" />
-            <p>Loading your Training Programs learning dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+ if (loading) {
+  return <BrandLoader title="Loading programs" />;
+}
 
   if (error || !course || !derivedData) {
     return (

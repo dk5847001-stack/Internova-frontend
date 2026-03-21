@@ -46,7 +46,7 @@ function ModuleSidebar({
         <p className="section-kicker">Structured Learning Path</p>
         <h3>Course Modules</h3>
         <p>
-          Follow your Training Programs roadmap module by module and continue learning
+          Follow your Internship Programs roadmap module by module and continue learning
           with clear progress visibility.
         </p>
       </div>
@@ -98,7 +98,7 @@ function ModuleSidebar({
 
                     {!module.isUnlocked && (
                       <small className="pro-module-lock-note">
-                        Locked until Training Programs day {module.unlockDay} or premium
+                        Locked until Internship Programs day {module.unlockDay} or premium
                         unlock activation.
                       </small>
                     )}
@@ -187,7 +187,7 @@ function ModuleSidebar({
                       <div>
                         <strong>This module is currently locked.</strong>
                         <p>
-                          It becomes available on Training Programs day {module.unlockDay}.
+                          It becomes available on Internship Programs day {module.unlockDay}.
                           You can also unlock all remaining modules early through
                           verified premium access.
                         </p>

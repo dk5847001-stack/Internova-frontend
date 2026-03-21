@@ -360,7 +360,7 @@ function Dashboard() {
                   </h1>
                   <p className="dashboard-hero-subtitle">
                     Track your learning progress, manage course access, download
-                    learning access letters, complete mini tests, and generate verified
+                     offer letters, complete mini tests, and generate verified
                     certificates from one elegant dashboard.
                   </p>
                 </div>
@@ -504,7 +504,7 @@ function Dashboard() {
                 <div className="dashboard-feature-icon">🚀</div>
                 <h4 className="dashboard-feature-title">Programs</h4>
                 <p className="dashboard-feature-text">
-                  Browse domain-based training programs with flexible durations,
+                  Browse domain-based Internship Programs with flexible durations,
                   guided learning paths, and a clean premium experience.
                 </p>
               </div>

@@ -28,7 +28,7 @@ function AboutUs() {
 
   const rotatingHighlights = useMemo(
     () => [
-      "premium Training Program workflows",
+      "premium Internship Programs workflows",
       "guided learning experience",
       "verified digital certificates",
       "career-focused progress tracking",
@@ -63,7 +63,7 @@ function AboutUs() {
         subtitle:
           "AI concepts, practical understanding, smart workflows, and future-ready learning direction.",
         points: [
-          "Gain exposure to modern AI-oriented training program structure",
+          "Gain exposure to modern AI-oriented Internship Programs structure",
           "Move from theory to guided application understanding",
           "Learn inside a premium and organized digital experience",
         ],
@@ -74,7 +74,7 @@ function AboutUs() {
           "Professional finance learning, business context, and structured growth-oriented exposure.",
         points: [
           "Understand practical finance learning pathways",
-          "Experience a cleaner and more professional training program flow",
+          "Experience a cleaner and more professional Internship Programs flow",
           "Track progress toward structured completion outcomes",
         ],
       },
@@ -86,7 +86,7 @@ function AboutUs() {
     () => [
       {
         q: "What does InternovaTech offer to learners?",
-        a: "InternovaTech offers structured online training program-style learning experiences with guided modules, dashboard access, assessments, progress tracking, and verified certificates across multiple in-demand domains.",
+        a: "InternovaTech offers structured online Internship Programs-style learning experiences with guided modules, dashboard access, assessments, progress tracking, and verified certificates across multiple in-demand domains.",
       },
       {
         q: "How is InternovaTech different from normal learning platforms?",
@@ -98,7 +98,7 @@ function AboutUs() {
       },
       {
         q: "Is the platform suitable for students and freshers?",
-        a: "Yes, InternovaTech is designed for students, freshers, and learners who want guided learning, training program exposure, and a stronger digital profile through structured outcomes.",
+        a: "Yes, InternovaTech is designed for students, freshers, and learners who want guided learning, Internship Programs exposure, and a stronger digital profile through structured outcomes.",
       },
     ],
     []
@@ -118,13 +118,13 @@ function AboutUs() {
       },
       {
         name: "Rohit Verma",
-        role: "Training Program User",
-        text: "The verification support and premium UI gave a lot more trust to the experience. It felt like a proper digital Training Programs workspace instead of just another random learning page.",
+        role: "Internship Programs User",
+        text: "The verification support and premium UI gave a lot more trust to the experience. It felt like a proper digital Internship Programs workspace instead of just another random learning page.",
       },
       {
         name: "Akash Kumar",
-        role: "Training Program User",
-        text: "I used this website, the platform support and premium UI gave a lot more trust to the experience. It felt like a proper digital Training Programs workspace instead of just another random learning page.",
+        role: "Internship Programs User",
+        text: "I used this website, the platform support and premium UI gave a lot more trust to the experience. It felt like a proper digital Internship Programs workspace instead of just another random learning page.",
       },
     ],
     []
@@ -132,7 +132,7 @@ function AboutUs() {
 
   useEffect(() => {
     document.title =
-      "InternovaTech - Online Training Programs, Verified Certificates and Tech Training";
+      "InternovaTech - Online Internship Programs, Verified Certificates and Tech Training";
 
     const metaDescription = document.querySelector('meta[name="description"]');
     const previousDescription = metaDescription?.getAttribute("content") || "";
@@ -140,7 +140,7 @@ function AboutUs() {
     if (metaDescription) {
       metaDescription.setAttribute(
         "content",
-        "InternovaTech offers premium online Training Programs with practical learning, guided modules, assessments, progress tracking and verified certificates across Web Development, Data Science, Artificial Intelligence, Finance and more."
+        "InternovaTech offers premium online Internship Programs with practical learning, guided modules, assessments, progress tracking and verified certificates across Web Development, Data Science, Artificial Intelligence, Finance and more."
       );
     }
 
@@ -157,7 +157,7 @@ function AboutUs() {
 
     return () => {
       document.title =
-        "InternovaTech - Online Training Programs, Certificates and Tech Training";
+        "InternovaTech - Online Internship Programs, Certificates and Tech Training";
 
       if (metaDescription) {
         metaDescription.setAttribute("content", previousDescription);
@@ -1626,7 +1626,7 @@ function AboutUs() {
 
                   <h1 className="home-v67-title">
                     <span className="home-v67-title-accent">InternovaTech</span> is
-                    your premium platform for online Training Programs, practical
+                    your premium platform for online Internship Programs, practical
                     learning, and verified digital achievement.
                   </h1>
 
@@ -1639,7 +1639,7 @@ function AboutUs() {
 
                   <p className="home-v67-subtitle">
                     InternovaTech helps students, freshers, and learners build
-                    real career-focused skills through structured Training Programs
+                    real career-focused skills through structured Internship Programs
                     programs, guided modules, assessments, progress tracking, and
                     certificate verification support. Our platform is designed to
                     deliver a futuristic, premium, and outcome-driven learning
@@ -1649,7 +1649,7 @@ function AboutUs() {
 
                   <div className="home-v67-cta-row">
                     <Link to="/internships" className="home-v67-btn-primary">
-                      Explore Training Programs
+                      Explore Internship Programs
                     </Link>
                     <Link to="/verify" className="home-v67-btn-success">
                       Verify Certificate
@@ -1667,7 +1667,7 @@ function AboutUs() {
                     <span className="home-v67-mini-chip">Verified Certificates</span>
                     <span className="home-v67-mini-chip">Premium Dashboard UX</span>
                     <span className="home-v67-mini-chip">
-                      Career-Focused Training Programs Paths
+                      Career-Focused Internship Programs Paths
                     </span>
                   </div>
                 </div>
@@ -1691,7 +1691,7 @@ function AboutUs() {
                           <div className="home-v67-metric-label">Programs</div>
                           <div className="home-v67-metric-value">Multi-Domain</div>
                           <p className="home-v67-metric-text">
-                            Explore role-focused Training Programs paths with premium structure.
+                            Explore role-focused Internship Programs paths with premium structure.
                           </p>
                         </div>
 
@@ -1932,7 +1932,7 @@ function AboutUs() {
                     </div>
                     <h2 className="home-v67-card-title">Our Mission</h2>
                     <p className="home-v67-card-text">
-                      Our mission is to make online Training Programs and digital
+                      Our mission is to make online Internship Programs and digital
                       learning more accessible, skill-oriented, premium, and
                       professional by combining learner support, structured
                       training, assessments, and verified achievement in one place.
@@ -1950,7 +1950,7 @@ function AboutUs() {
                     <h2 className="home-v67-card-title">What We Focus On</h2>
                     <p className="home-v67-card-text">
                       InternovaTech focuses on practical skill development,
-                      Training Programs participation, progress visibility, assessment
+                      Internship Programs participation, progress visibility, assessment
                       readiness, certificate eligibility, and smoother learning
                       journeys from start to completion.
                     </p>
@@ -1968,7 +1968,7 @@ function AboutUs() {
                 <p className="home-v67-process-text">
                   InternovaTech combines premium SaaS design with structured
                   learning flow, helping students and freshers go from exploration
-                  to completion inside one trusted Training Programs ecosystem.
+                  to completion inside one trusted Internship Programs ecosystem.
                 </p>
 
                 <div className="home-v67-timeline">
@@ -1977,7 +1977,7 @@ function AboutUs() {
                       <div className="home-v67-step-number">01</div>
                       <h3 className="home-v67-step-title">Explore</h3>
                       <p className="home-v67-step-text">
-                        Discover role-focused Training Programs across modern domains.
+                        Discover role-focused Internship Programs across modern domains.
                       </p>
                     </div>
 
@@ -2090,7 +2090,7 @@ function AboutUs() {
                 Start your journey with InternovaTech
               </h2>
               <p className="home-v67-final-text">
-                Whether you want to explore Training Programs, continue your
+                Whether you want to explore Internship Programs, continue your
                 dashboard, verify certificates, or build job-ready skills,
                 InternovaTech is designed to give you a polished, futuristic,
                 and growth-focused learning experience.
@@ -2098,7 +2098,7 @@ function AboutUs() {
 
               <div className="home-v67-link-row">
                 <Link to="/internships" className="home-v67-link-chip">
-                  Training Programs
+                  Internship Programs
                 </Link>
                 <Link to="/verify" className="home-v67-link-chip">
                   Certificate Verification

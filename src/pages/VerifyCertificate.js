@@ -26,7 +26,7 @@ function VerifyCertificate() {
     if (metaDescription) {
       metaDescription.setAttribute(
         "content",
-        "Verify InternovaTech certificates using the official certificate ID. Confirm candidate details, Training Programs details, issue date, and certificate authenticity."
+        "Verify InternovaTech certificates using the official certificate ID. Confirm candidate details, Internship Programs details, issue date, and certificate authenticity."
       );
     }
 
@@ -48,7 +48,7 @@ function VerifyCertificate() {
 
     return () => {
       document.title =
-        "InternovaTech - Online Training Programs, Certificates and Tech Training";
+        "InternovaTech - Online Internship Programs, Certificates and Tech Training";
 
       if (metaDescription) {
         metaDescription.setAttribute("content", previousDescription);
@@ -600,7 +600,7 @@ function VerifyCertificate() {
                 <p className="verify-v61-text">
                   Confirm certificate authenticity using the official certificate
                   ID or by opening the QR-linked verification page. Review
-                  candidate details, Training Programs information, issue date, and
+                  candidate details, Internship Programs information, issue date, and
                   verification status through the InternovaTech portal.
                 </p>
               </div>
@@ -616,7 +616,7 @@ function VerifyCertificate() {
                   <h3 className="verify-v61-mini-title">Why verify?</h3>
                   <ul className="verify-v61-mini-list">
                     <li>Confirms document authenticity</li>
-                    <li>Shows candidate and Training Programs details</li>
+                    <li>Shows candidate and Internship Programs details</li>
                     <li>Validates issue date and status</li>
                   </ul>
                 </div>
@@ -751,12 +751,12 @@ function VerifyCertificate() {
                       <div className="col-lg-6">
                         <div className="verify-v61-record-card">
                           <h3 className="verify-v61-record-title">
-                            Training Programs Details
+                            Internship Programs Details
                           </h3>
 
                           <div className="verify-v61-info-block">
                             <div className="verify-v61-info-label">
-                              Training Programs Title
+                              Internship Programs Title
                             </div>
                             <p className="verify-v61-info-value">
                               {result.certificate?.internshipTitle || "N/A"}

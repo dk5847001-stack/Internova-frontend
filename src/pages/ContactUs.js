@@ -33,7 +33,7 @@ function ContactUs() {
 
   useEffect(() => {
     document.title =
-      "Contact InternovaTech - Support, Training Programs Help and Certificate Queries";
+      "Contact InternovaTech - Support, Internship Programs Help and Certificate Queries";
 
     const metaDescription = document.querySelector('meta[name="description"]');
     const previousDescription = metaDescription?.getAttribute("content") || "";
@@ -41,7 +41,7 @@ function ContactUs() {
     if (metaDescription) {
       metaDescription.setAttribute(
         "content",
-        "Contact InternovaTech for Training Programs support, certificate verification help, account assistance, payment queries and learner guidance."
+        "Contact InternovaTech for Internship Programs support, certificate verification help, account assistance, payment queries and learner guidance."
       );
     }
 
@@ -58,7 +58,7 @@ function ContactUs() {
 
     return () => {
       document.title =
-        "InternovaTech - Online Training Programs, Certificates and Tech Training";
+        "InternovaTech - Online Internship Programs, Certificates and Tech Training";
 
       if (metaDescription) {
         metaDescription.setAttribute("content", previousDescription);
@@ -912,7 +912,7 @@ function ContactUs() {
               for support, guidance, and learner help
             </h1>
             <p className="contact-v61-text">
-              Reach out for Training Programs access, certificate verification help,
+              Reach out for Internship Programs access, certificate verification help,
               account support, payment issues, and general learning queries.
               InternovaTech is built to give learners a cleaner and more trusted
               support experience.
@@ -924,7 +924,7 @@ function ContactUs() {
               <div className="contact-v61-card">
                 <h2 className="contact-v61-card-title">Support Information</h2>
                 <p className="contact-v61-card-text mb-4">
-                  Use the details below for platform support and Training Programs-related help.
+                  Use the details below for platform support and Internship Programs-related help.
                 </p>
 
                 <div className="contact-v61-info-box">
@@ -937,7 +937,7 @@ function ContactUs() {
                 <div className="contact-v61-info-box">
                   <div className="contact-v61-info-title">Support Scope</div>
                   <p className="contact-v61-info-value">
-                    Training Programs access, account support, certificate queries,
+                    Internship Programs access, account support, certificate queries,
                     learner guidance, and payment-related issues.
                   </p>
                 </div>
@@ -1183,7 +1183,7 @@ function ContactUs() {
               <p className="contact-v61-band-text">
                 InternovaTech is designed to support structured learning,
                 verified completion, and smoother communication for learners
-                at every stage of their Training Programs journey.
+                at every stage of their Internship Programs journey.
               </p>
             </div>
           </section>

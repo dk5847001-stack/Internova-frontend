@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API, { downloadProtectedPdf } from "../services/api";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import BrandLoader from "../components/BrandLoader";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
@@ -111,8 +112,8 @@ function InternshipDetails() {
         );
       }
     } catch (error) {
-      console.error("Failed to fetch Training Programs details:", error);
-      showToast("error", "Failed to load Training Programs details");
+      console.error("Failed to fetch Internship Programs details:", error);
+      showToast("error", "Failed to load Internship Programs details");
     } finally {
       setPageLoading(false);
     }
@@ -169,13 +170,13 @@ function InternshipDetails() {
   };
 
   useEffect(() => {
-    document.title = "Training Programs Details | InternovaTech";
+    document.title = "Internship Programs Details | InternovaTech";
     fetchInternship();
     checkCertificateEligibility();
 
     return () => {
       document.title =
-        "InternovaTech - Online Training Programs, Certificates and Tech Training";
+        "InternovaTech - Online Internship Programs, Certificates and Tech Training";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -1111,7 +1112,7 @@ function InternshipDetails() {
                   ) : certificateEligible ? (
                     <div className="details-v61-status details-v61-status-success">
                       {eligibilityMessage ||
-                        "You are eligible to claim your certificate for this Training Programs."}
+                        "You are eligible to claim your certificate for this Internship Programs."}
                     </div>
                   ) : (
                     <div className="details-v61-status details-v61-status-warning">
@@ -1148,7 +1149,7 @@ function InternshipDetails() {
                     <h2 className="details-v61-card-title">What you get</h2>
                     <ul className="details-v61-list">
                       <li>Program access after successful enrollment</li>
-                      <li>Learning access letter download</li>
+                      <li>Premium offer letter download</li>
                       <li>Premium payment slip download</li>
                       <li>Course modules and progress tracking</li>
                       <li>Mini test and retake support</li>
@@ -1171,7 +1172,7 @@ function InternshipDetails() {
                       <p className="details-v61-footer-text">
                         InternovaTech combines guided learning, progress
                         visibility, assessments, and trusted certificate support
-                        inside one polished Training Programs experience.
+                        inside one polished Internship Programs experience.
                       </p>
                     </div>
                   </div>
