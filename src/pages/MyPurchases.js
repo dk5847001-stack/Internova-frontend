@@ -236,6 +236,7 @@ function MyPurchases() {
     return purchases.filter((item) => statusMap[item._id]?.certificateEligible)
       .length;
   }, [purchases, statusMap]);
+  
 
  if (loading) {
   return <BrandLoader title="Loading internships" />;
