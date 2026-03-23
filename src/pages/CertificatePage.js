@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { useNavigate, useParams } from "react-router-dom";
+import BrandLoader from "../components/BrandLoader";
 
 function CertificatePage() {
   const { internshipId } = useParams();
@@ -170,22 +171,7 @@ function CertificatePage() {
   const durationCompleted = !!eligibility?.durationCompleted;
 
   if (loading) {
-    return (
-      <div
-        className="min-vh-100 d-flex align-items-center justify-content-center"
-        style={{
-          background:
-            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%)",
-        }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-dark mb-3" role="status"></div>
-          <div className="fw-semibold text-dark">
-            Loading certificate status...
-          </div>
-        </div>
-      </div>
-    );
+    return <BrandLoader title="Loading programs" />;
   }
 
   return (
