@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import API from "../services/api";
 import { Link } from "react-router-dom";
+import BrandLoader from "../components/BrandLoader";
+
 import {
   ResponsiveContainer,
   PieChart,
@@ -889,20 +891,7 @@ function AdminDashboard() {
     );
 
   if (loading) {
-    return (
-      <div
-        className="min-vh-100 d-flex align-items-center justify-content-center"
-        style={{
-          background:
-            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%)",
-        }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-dark mb-3" role="status"></div>
-          <div className="fw-semibold text-dark">Loading admin dashboard...</div>
-        </div>
-      </div>
-    );
+    return <BrandLoader title="Loading programs" />;
   }
 
   return (
