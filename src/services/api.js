@@ -1,8 +1,7 @@
 import axios from "axios";
+import { clearAuthSession, getStoredToken } from "../utils/authStorage";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "/api";
-
-console.log("API BASE URL:", API_BASE_URL);
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -11,7 +10,7 @@ const API = axios.create({
 
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = getStoredToken();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -29,6 +28,7 @@ API.interceptors.response.use(
 
     if (status === 401) {
       console.error("Unauthorized request. Please login again.");
+      clearAuthSession();
     }
 
     if (status === 403) {

@@ -33,6 +33,7 @@ import {
   getNextVideoItem,
   markVideoProgress,
 } from "../utils/courseHelpers";
+import { getStoredUser } from "../utils/authStorage";
 
 function CourseProgress() {
   const navigate = useNavigate();
@@ -53,13 +54,7 @@ function CourseProgress() {
     message: "",
   });
 
-  const user = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "null");
-    } catch (error) {
-      return null;
-    }
-  }, []);
+  const user = useMemo(() => getStoredUser(), []);
 
   const showToast = (type, title, message) => {
     setToast({

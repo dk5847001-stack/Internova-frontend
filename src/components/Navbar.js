@@ -22,6 +22,12 @@ import {
   FaInfo,
 } from "react-icons/fa";
 import { HiMiniBars3BottomRight } from "react-icons/hi2";
+import {
+  clearAuthSession,
+  clearPendingVerificationEmail,
+  getStoredToken,
+  getStoredUser,
+} from "../utils/authStorage";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -37,8 +43,8 @@ function Navbar() {
   const notificationRef = useRef(null);
   const menuRef = useRef(null);
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-  const token = localStorage.getItem("token");
+  const user = getStoredUser();
+  const token = getStoredToken();
   const isAdmin = user?.role === "admin";
 
   const closeMobileMenu = () => {
@@ -46,9 +52,8 @@ function Navbar() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("pendingVerificationEmail");
+    clearAuthSession();
+    clearPendingVerificationEmail();
     closeMobileMenu();
     setNotificationsOpen(false);
     navigate("/login");

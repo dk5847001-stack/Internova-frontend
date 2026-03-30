@@ -1,16 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
+import { getStoredToken, getStoredUser } from "../utils/authStorage";
 
 function ContactUs() {
-  const storedUser = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "null");
-    } catch (error) {
-      return null;
-    }
-  }, []);
+  const storedUser = useMemo(() => getStoredUser(), []);
 
-  const token = localStorage.getItem("token");
+  const token = getStoredToken();
 
   const [formData, setFormData] = useState({
     name: storedUser?.name || "",

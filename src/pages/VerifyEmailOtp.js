@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  clearPendingVerificationEmail,
+  getPendingVerificationEmail,
+  saveAuthSession,
+  setPendingVerificationEmail,
+} from "../utils/authStorage";
 
 function VerifyEmailOtp() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [email, setEmail] = useState(
-    location.state?.email || localStorage.getItem("pendingVerificationEmail") || ""
+    location.state?.email || getPendingVerificationEmail() || ""
   );
   const [otp, setOtp] = useState("");
   const [message, setMessage] = useState("");
@@ -16,7 +22,7 @@ function VerifyEmailOtp() {
 
   useEffect(() => {
     if (email) {
-      localStorage.setItem("pendingVerificationEmail", email);
+      setPendingVerificationEmail(email);
     }
   }, [email]);
 
@@ -34,15 +40,11 @@ function VerifyEmailOtp() {
 
       const { data } = await API.post("/auth/verify-email-otp", payload);
 
-      localStorage.removeItem("pendingVerificationEmail");
-
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-      }
-
-      if (data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
+      clearPendingVerificationEmail();
+      saveAuthSession({
+        token: data?.token,
+        user: data?.user,
+      });
 
       setMessage(data?.message || "Email verified successfully.");
 
@@ -560,7 +562,7 @@ function VerifyEmailOtp() {
 
                         <p className="otp-footer-text">
                           Back to{" "}
-                          <Link to="/" className="otp-link">
+                          <Link to="/login" className="otp-link">
                             Login
                           </Link>
                         </p>

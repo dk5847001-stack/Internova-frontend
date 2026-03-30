@@ -732,7 +732,7 @@ function VerifyCertificate() {
 
                           <div className="verify-v61-info-block">
                             <div className="verify-v61-info-label">
-                              Candidate Email
+                              Candidate Email (masked)
                             </div>
                             <p className="verify-v61-info-value">
                               {result.certificate?.candidateEmail || "N/A"}

@@ -3,6 +3,11 @@ import API from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import {
+  clearPendingVerificationEmail,
+  saveAuthSession,
+  setPendingVerificationEmail,
+} from "../utils/authStorage";
 
 function Login() {
   const navigate = useNavigate();
@@ -18,15 +23,11 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const saveAuthAndRedirect = (data) => {
-    localStorage.removeItem("pendingVerificationEmail");
-
-    if (data?.token) {
-      localStorage.setItem("token", data.token);
-    }
-
-    if (data?.user) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-    }
+    clearPendingVerificationEmail();
+    saveAuthSession({
+      token: data?.token,
+      user: data?.user,
+    });
 
     setMessage("Login successful");
     setTimeout(() => {
@@ -57,7 +58,7 @@ function Login() {
 
       if (requiresEmailVerification) {
         const pendingEmail = error.response?.data?.email || formData.email;
-        localStorage.setItem("pendingVerificationEmail", pendingEmail);
+        setPendingVerificationEmail(pendingEmail);
         setMessage(apiMessage);
 
         setTimeout(() => {

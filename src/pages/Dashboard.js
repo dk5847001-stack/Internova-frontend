@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { clearAuthSession, getStoredUser } from "../utils/authStorage";
 
 function Dashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getStoredUser();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/");
+    clearAuthSession();
+    navigate("/login");
   };
 
   return (

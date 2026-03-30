@@ -49,8 +49,10 @@ function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setMessage("Password must be at least 6 characters long.");
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setMessage(
+        "Password must be at least 8 characters long and include letters and numbers."
+      );
       return;
     }
 
@@ -595,7 +597,7 @@ function ResetPassword() {
 
                         <p className="reset-footer-text">
                           Back to{" "}
-                          <Link to="/" className="reset-link">
+                          <Link to="/login" className="reset-link">
                             Login
                           </Link>
                         </p>

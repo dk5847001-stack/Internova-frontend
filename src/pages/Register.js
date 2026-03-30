@@ -3,6 +3,11 @@ import API from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import {
+  clearPendingVerificationEmail,
+  saveAuthSession,
+  setPendingVerificationEmail,
+} from "../utils/authStorage";
 
 function Register() {
   const navigate = useNavigate();
@@ -20,15 +25,11 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
 
   const saveAuthAndRedirect = (data) => {
-    localStorage.removeItem("pendingVerificationEmail");
-
-    if (data?.token) {
-      localStorage.setItem("token", data.token);
-    }
-
-    if (data?.user) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-    }
+    clearPendingVerificationEmail();
+    saveAuthSession({
+      token: data?.token,
+      user: data?.user,
+    });
 
     navigate("/dashboard");
   };
@@ -43,21 +44,42 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const password = formData.password;
+
+    if (trimmedName.length < 2) {
+      setMessage("Name must be at least 2 characters long.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setMessage(
+        "Password must be at least 8 characters long and include letters and numbers."
+      );
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage("");
 
       const payload = {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
+        name: trimmedName,
+        email: trimmedEmail,
         phone: formData.phone.trim(),
-        password: formData.password,
+        password,
       };
 
       const { data } = await API.post("/auth/register", payload);
 
       if (data?.requiresEmailVerification) {
-        localStorage.setItem("pendingVerificationEmail", payload.email);
+        setPendingVerificationEmail(payload.email);
         setMessage("Registration successful. OTP sent to your email.");
         setTimeout(() => {
           navigate("/verify-email-otp", {
@@ -886,7 +908,7 @@ function Register() {
 
                         <p className="register-footer-text">
                           Already have an account?{" "}
-                          <Link to="/" className="register-link fw-semibold">
+                          <Link to="/login" className="register-link fw-semibold">
                             Login
                           </Link>
                         </p>

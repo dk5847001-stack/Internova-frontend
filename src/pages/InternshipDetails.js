@@ -1,10 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import API, { downloadProtectedPdf } from "../services/api";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import BrandLoader from "../components/BrandLoader";
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+import { getStoredToken, getStoredUser } from "../utils/authStorage";
 
 function InternshipDetails() {
   const { id } = useParams();
@@ -27,8 +24,8 @@ function InternshipDetails() {
     message: "",
   });
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-  const token = localStorage.getItem("token");
+  const user = getStoredUser();
+  const token = getStoredToken();
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -363,9 +360,12 @@ function InternshipDetails() {
         );
 
         if (data.certificate?.certificateId) {
-          window.open(
-            `${API_BASE_URL}/certificates/${data.certificate.certificateId}/download`,
-            "_blank"
+          await downloadProtectedPdf(
+            `/certificates/${data.certificate.certificateId}/download`,
+            `${(internship?.title || "certificate")
+              .replace(/[^a-z0-9]/gi, "_")
+              .replace(/_+/g, "_")
+              .replace(/^_|_$/g, "")}_certificate.pdf`
           );
         }
 

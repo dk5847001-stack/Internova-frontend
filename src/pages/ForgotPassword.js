@@ -451,7 +451,7 @@ function ForgotPassword() {
 
                         <p className="forgot-footer-text">
                           Remember your password?{" "}
-                          <Link to="/" className="forgot-link">
+                          <Link to="/login" className="forgot-link">
                             Back to Login
                           </Link>
                         </p>
