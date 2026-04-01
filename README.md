@@ -1,4 +1,13 @@
 doc: update:21
+doc: update:22
+doc: update:23
+doc: update:24
+doc: update:25
+doc: update:26
+doc: update:27
+doc: update:28
+doc: update:29
+doc: update:30
 # Getting Started with Create React App
 ok
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -8,6 +17,7 @@ Small collaborative update for documentation.
 In the project directory, you can run:
 
 ### `npm start`
+
 
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
