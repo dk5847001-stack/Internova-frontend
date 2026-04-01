@@ -3,6 +3,8 @@ doc: update:22
 doc: update:23
 doc: update:24
 doc: update:25
+doc: update:26
+doc: update:27
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
