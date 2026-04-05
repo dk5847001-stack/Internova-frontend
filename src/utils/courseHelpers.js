@@ -163,15 +163,17 @@ export const getFirstAvailableVideo = (modules = []) => {
 export const getAllUnlockedVideos = (modules = []) => {
   return safeArray(modules)
     .filter((module) => module?.isUnlocked)
-    .flatMap((module) =>
-      sortByOrder(module?.videos).map((video) => ({
+    .flatMap((module) => {
+      const videos = sortByOrder(module?.videos);
+
+      return videos.map((video) => ({
         module: {
           ...module,
-          videos: sortByOrder(module?.videos),
+          videos,
         },
         video,
-      }))
-    );
+      }));
+    });
 };
 
 export const getNextVideoItem = (modules = [], currentVideoId) => {
