@@ -1,7 +1,21 @@
 import axios from "axios";
 import { clearAuthSession, getStoredToken } from "../utils/authStorage";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "/api";
+const normalizeApiBaseUrl = (value = "") => {
+  const trimmedValue = String(value || "").trim();
+
+  if (!trimmedValue) {
+    return "/api";
+  }
+
+  if (trimmedValue === "/") {
+    return "/api";
+  }
+
+  return trimmedValue.replace(/\/+$/, "");
+};
+
+const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_BASE_URL);
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -13,6 +27,7 @@ API.interceptors.request.use(
     const token = getStoredToken();
 
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
