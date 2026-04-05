@@ -36,18 +36,18 @@ import ScrollToTop from "./components/ScrollToTop";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AdminDashboard from "./pages/AdminDashboard";
 
+const HIDE_LAYOUT_ROUTES = new Set([
+  "/login",
+  "/register",
+  "/verify-email-otp",
+  "/forgot-password",
+]);
+
 function AppLayout() {
   const location = useLocation();
 
-  const hideLayoutRoutes = [
-    "/login",
-    "/register",
-    "/verify-email-otp",
-    "/forgot-password",
-  ];
-
   const shouldHideLayout =
-    hideLayoutRoutes.includes(location.pathname) ||
+    HIDE_LAYOUT_ROUTES.has(location.pathname) ||
     location.pathname.startsWith("/reset-password/");
 
   return (
