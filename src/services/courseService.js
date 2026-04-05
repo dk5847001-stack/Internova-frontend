@@ -8,13 +8,21 @@ const validateInternshipId = (internshipId) => {
   if (!internshipId || typeof internshipId !== "string") {
     throw new Error("Valid internship ID is required");
   }
+
+  const trimmedInternshipId = internshipId.trim();
+
+  if (!trimmedInternshipId) {
+    throw new Error("Valid internship ID is required");
+  }
+
+  return trimmedInternshipId;
 };
 
 export const getCourseProgress = async (internshipId) => {
   try {
-    validateInternshipId(internshipId);
+    const safeInternshipId = validateInternshipId(internshipId);
 
-    const { data } = await API.get(`/progress/course/${internshipId}`);
+    const { data } = await API.get(`/progress/course/${safeInternshipId}`);
     return data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to fetch course progress"));
@@ -23,16 +31,17 @@ export const getCourseProgress = async (internshipId) => {
 
 export const updateVideoProgress = async (internshipId, payload = {}) => {
   try {
-    validateInternshipId(internshipId);
+    const safeInternshipId = validateInternshipId(internshipId);
+    const watchedPercent = Number(payload?.watchedPercent || 0);
 
     const safePayload = {
       moduleId: payload?.moduleId || "",
       videoId: payload?.videoId || "",
-      watchedPercent: Number(payload?.watchedPercent || 0),
+      watchedPercent: Math.min(100, Math.max(0, watchedPercent)),
     };
 
     const { data } = await API.patch(
-      `/progress/course/${internshipId}/video`,
+      `/progress/course/${safeInternshipId}/video`,
       safePayload
     );
 
@@ -44,10 +53,10 @@ export const updateVideoProgress = async (internshipId, payload = {}) => {
 
 export const unlockAllModules = async (internshipId) => {
   try {
-    validateInternshipId(internshipId);
+    const safeInternshipId = validateInternshipId(internshipId);
 
     const { data } = await API.patch(
-      `/progress/course/${internshipId}/unlock-all`
+      `/progress/course/${safeInternshipId}/unlock-all`
     );
 
     return data;
@@ -58,10 +67,10 @@ export const unlockAllModules = async (internshipId) => {
 
 export const createUnlockAllOrder = async (internshipId) => {
   try {
-    validateInternshipId(internshipId);
+    const safeInternshipId = validateInternshipId(internshipId);
 
     const { data } = await API.post("/payments/create-order", {
-      internshipId,
+      internshipId: safeInternshipId,
       purchaseType: "unlock_all",
     });
 
@@ -91,10 +100,10 @@ export const verifyUnlockAllPayment = async (payload = {}) => {
 
 export const getEligibilityStatus = async (internshipId) => {
   try {
-    validateInternshipId(internshipId);
+    const safeInternshipId = validateInternshipId(internshipId);
 
     const { data } = await API.get(
-      `/progress/course/${internshipId}/eligibility`
+      `/progress/course/${safeInternshipId}/eligibility`
     );
 
     return data;
