@@ -46,6 +46,7 @@ function Navbar() {
   const user = getStoredUser();
   const token = getStoredToken();
   const isAdmin = user?.role === "admin";
+  const trimmedSearch = search.trim();
 
   const closeMobileMenu = () => {
     setMenuOpen(false);
@@ -62,10 +63,10 @@ function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
 
-    if (!search.trim()) return;
+    if (!trimmedSearch) return;
 
     closeMobileMenu();
-    navigate(`/internships?search=${encodeURIComponent(search.trim())}`);
+    navigate(`/internships?search=${encodeURIComponent(trimmedSearch)}`);
     setSearch("");
   };
 
@@ -1320,6 +1321,7 @@ function Navbar() {
                   <form
                     className="internovatech-search-wrap"
                     onSubmit={handleSearch}
+                    role="search"
                   >
                     <input
                       type="text"
@@ -1327,8 +1329,14 @@ function Navbar() {
                       placeholder="Search programs..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
+                      aria-label="Search internship programs"
+                      autoComplete="off"
                     />
-                    <button type="submit" className="internovatech-search-btn">
+                    <button
+                      type="submit"
+                      className="internovatech-search-btn"
+                      disabled={!trimmedSearch}
+                    >
                       <FaSearch className="internovatech-search-btn-icon" />
                       <span>Search</span>
                     </button>
