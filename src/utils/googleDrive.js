@@ -38,6 +38,9 @@ export function extractYouTubeVideoId(url = "") {
   match = trimmedUrl.match(/\/embed\/([a-zA-Z0-9_-]{6,})/);
   if (match?.[1]) return match[1];
 
+  match = trimmedUrl.match(/\/live\/([a-zA-Z0-9_-]{6,})/);
+  if (match?.[1]) return match[1];
+
   match = trimmedUrl.match(/\/shorts\/([a-zA-Z0-9_-]{6,})/);
   if (match?.[1]) return match[1];
 
