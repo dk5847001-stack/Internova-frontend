@@ -145,7 +145,7 @@ function RefundPolicy() {
             <div className="legal-section">
               <h4>Contact</h4>
               <p>
-                For refund-related help, contact internova.support@gmail.com.
+                For refund-related help, contact support@internovatech.in.
               </p>
             </div>
           </div>

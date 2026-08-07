@@ -642,7 +642,7 @@ function Footer() {
                 <div className="footer-v60-info-box">
                   <h6 className="footer-v60-info-title">Support</h6>
                   <p className="footer-v60-info-text">
-                    internova.support@gmail.com
+                    support@internovatech.in
                   </p>
                 </div>
 

@@ -925,7 +925,7 @@ function ContactUs() {
                 <div className="contact-v61-info-box">
                   <div className="contact-v61-info-title">Support Email</div>
                   <p className="contact-v61-info-value">
-                    internova.support@gmail.com
+                    support@internovatech.in
                   </p>
                 </div>
 
