@@ -747,7 +747,7 @@ and grow professionally.
               </p>
 
               <div className="footer-v60-socials">
-                <a href="/" onClick={(e) => e.preventDefault()}>LinkedIn</a>
+                <a href="https://www.linkedin.com/company/internova-global-services/">LinkedIn</a>
                 <a href="/" onClick={(e) => e.preventDefault()}>GitHub</a>
                 <a href="/" onClick={(e) => e.preventDefault()}>Instagram</a>
                 <Link to="/contact">Support</Link>
