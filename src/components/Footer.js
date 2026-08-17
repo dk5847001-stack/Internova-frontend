@@ -596,7 +596,12 @@ function Footer() {
                 <p className="footer-v60-text">
                   InternovaTech helps students and learners access structured online
                   Internship Programs, practical modules, progress tracking, mini assessments,
-                  and verified certificates through a premium SaaS-style learning experience.
+                  and verified certificates through a premium SaaS-style learning experience. <br/><br/>
+
+                  Our mission is to bridge the gap between academic learning and industry
+needs through hands-on projects, expert mentorship, career guidance,
+and practical skill development, helping students become job-ready
+and grow professionally.
                 </p>
 
                 <div className="footer-v60-mini-badges">
@@ -631,6 +636,13 @@ function Footer() {
                   <li><span>Business Analytics</span></li>
                   <li><span>Data Science</span></li>
                   <li><span>Finance</span></li>
+
+                  <li><span>Internet of Things</span></li>
+                  <li><span>Blockchain Technology</span></li>
+                  <li><span>Robotics & Automation</span></li>
+                  <li><span>Human Resource Management (HR)</span></li>
+                  <li><span>Product Management</span></li>
+
                 </ul>
               </div>
             </div>
@@ -659,7 +671,15 @@ function Footer() {
                   <p className="footer-v60-info-text">
                     Mon - Sat • 9:00 AM to 6:00 PM
                   </p>
+                </div><br />
+                
+                <div className="footer-v60-info-box mb-0">
+                  <h6 className="footer-v60-info-title">Address</h6>
+                  <p className="footer-v60-info-text">
+                    Plot No. D-24, Sector 3, Block D, Sector 12, Noida, Uttar Pradesh 201301
+                  </p>
                 </div>
+
               </div>
             </div>
           </div>
