@@ -22,6 +22,7 @@ import CertificatePage from "./pages/CertificatePage";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import AdminInternships from "./pages/AdminInternships";
 
+import RegistrationSuccess from "./pages/RegistrationSuccess";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -76,6 +77,7 @@ function AppLayout() {
         />
 
         <Route path="/internships" element={<Internships />} />
+        <Route path="/registrationSuccess" element={<RegistrationSuccess />} />
 
        <Route path="/internships/:id" element={<InternshipDetails />} />
 
