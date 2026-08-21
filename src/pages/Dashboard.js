@@ -39,7 +39,11 @@ function Dashboard() {
           height: 220px;
           top: 70px;
           left: -60px;
-          background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(14,165,233,0.18));
+          background: linear-gradient(
+            135deg,
+            rgba(37,99,235,0.25),
+            rgba(14,165,233,0.18)
+          );
         }
 
         .dashboard-orb-2 {
@@ -47,7 +51,11 @@ function Dashboard() {
           height: 280px;
           right: -80px;
           bottom: 70px;
-          background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(59,130,246,0.22));
+          background: linear-gradient(
+            135deg,
+            rgba(99,102,241,0.18),
+            rgba(59,130,246,0.22)
+          );
           animation-delay: 1.2s;
           -webkit-animation-delay: 1.2s;
         }
@@ -57,10 +65,17 @@ function Dashboard() {
           z-index: 2;
         }
 
+        /* HERO */
         .dashboard-hero-card {
           border: 1px solid rgba(255,255,255,0.42);
           background:
-            linear-gradient(135deg, #081226 0%, #0b1736 35%, #142850 70%, #1d4ed8 100%);
+            linear-gradient(
+              135deg,
+              #081226 0%,
+              #0b1736 35%,
+              #142850 70%,
+              #1d4ed8 100%
+            );
           color: #fff;
           overflow: hidden;
           position: relative;
@@ -77,8 +92,16 @@ function Dashboard() {
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(circle at 18% 22%, rgba(255,255,255,0.12), transparent 22%),
-            radial-gradient(circle at 82% 74%, rgba(255,255,255,0.08), transparent 18%);
+            radial-gradient(
+              circle at 18% 22%,
+              rgba(255,255,255,0.12),
+              transparent 22%
+            ),
+            radial-gradient(
+              circle at 82% 74%,
+              rgba(255,255,255,0.08),
+              transparent 18%
+            );
           pointer-events: none;
         }
 
@@ -113,6 +136,7 @@ function Dashboard() {
           max-width: 720px;
         }
 
+        /* HERO STATS */
         .dashboard-stat-card {
           background: rgba(255,255,255,0.12);
           border: 1px solid rgba(255,255,255,0.16);
@@ -144,6 +168,7 @@ function Dashboard() {
           margin-bottom: 0;
         }
 
+        /* GLASS CARD */
         .dashboard-glass-card {
           border: 1px solid rgba(255,255,255,0.42);
           background: rgba(255,255,255,0.72);
@@ -204,6 +229,7 @@ function Dashboard() {
           word-break: break-word;
         }
 
+        /* PANEL */
         .dashboard-panel-title {
           font-size: 1.25rem;
           font-weight: 800;
@@ -217,6 +243,7 @@ function Dashboard() {
           line-height: 1.7;
         }
 
+        /* ACTION BUTTONS */
         .dashboard-action-btn {
           min-height: 54px;
           border-radius: 18px;
@@ -235,7 +262,12 @@ function Dashboard() {
         .dashboard-primary-btn {
           border: none;
           color: #fff;
-          background: linear-gradient(135deg, #0b1736 0%, #142850 40%, #1d4ed8 100%);
+          background: linear-gradient(
+            135deg,
+            #0b1736 0%,
+            #142850 40%,
+            #1d4ed8 100%
+          );
           box-shadow:
             0 18px 35px rgba(29, 78, 216, 0.18),
             0 8px 20px rgba(11, 23, 54, 0.14);
@@ -248,6 +280,136 @@ function Dashboard() {
           color: #fff;
         }
 
+        /* =========================================
+           INTERNSHIP REGISTRATION CARD
+        ========================================= */
+        .dashboard-internship-card {
+          position: relative;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.55);
+          background:
+            linear-gradient(
+              135deg,
+              rgba(7, 18, 43, 0.98) 0%,
+              rgba(20, 40, 80, 0.98) 48%,
+              rgba(29, 78, 216, 0.98) 100%
+            );
+          color: #fff;
+          box-shadow:
+            0 24px 70px rgba(15, 23, 42, 0.16),
+            0 10px 28px rgba(29, 78, 216, 0.12);
+        }
+
+        .dashboard-internship-card::before {
+          content: "";
+          position: absolute;
+          width: 240px;
+          height: 240px;
+          right: -80px;
+          top: -110px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.08);
+          pointer-events: none;
+        }
+
+        .dashboard-internship-card::after {
+          content: "";
+          position: absolute;
+          width: 180px;
+          height: 180px;
+          left: -80px;
+          bottom: -110px;
+          border-radius: 50%;
+          background: rgba(56,189,248,0.10);
+          pointer-events: none;
+        }
+
+        .dashboard-internship-content {
+          position: relative;
+          z-index: 1;
+        }
+
+        .dashboard-internship-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 13px;
+          border-radius: 999px;
+          background: rgba(34,197,94,0.16);
+          border: 1px solid rgba(134,239,172,0.30);
+          color: #bbf7d0;
+          font-size: 0.78rem;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          margin-bottom: 14px;
+        }
+
+        .dashboard-internship-title {
+          font-size: 1.8rem;
+          font-weight: 850;
+          letter-spacing: -0.025em;
+          margin-bottom: 10px;
+        }
+
+        .dashboard-internship-text {
+          color: rgba(255,255,255,0.82);
+          line-height: 1.75;
+          margin-bottom: 18px;
+          max-width: 760px;
+        }
+
+        .dashboard-internship-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .dashboard-internship-meta span {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 12px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.10);
+          border: 1px solid rgba(255,255,255,0.14);
+          color: rgba(255,255,255,0.92);
+          font-size: 0.86rem;
+          font-weight: 700;
+        }
+
+        .dashboard-register-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 52px;
+          padding: 12px 22px;
+          border-radius: 16px;
+          background: #fff;
+          color: #0b1736;
+          border: 1px solid rgba(255,255,255,0.9);
+          font-weight: 800;
+          text-decoration: none;
+          box-shadow: 0 12px 28px rgba(0,0,0,0.16);
+          transition: all 0.3s ease;
+        }
+
+        .dashboard-register-btn:hover {
+          color: #0b1736;
+          transform: translateY(-2px);
+          box-shadow: 0 16px 34px rgba(0,0,0,0.20);
+        }
+
+        .dashboard-register-note {
+          margin-top: 10px;
+          margin-bottom: 0;
+          color: rgba(255,255,255,0.68);
+          font-size: 0.78rem;
+        }
+
+        /* FEATURE CARDS */
         .dashboard-feature-card {
           border-radius: 28px;
           border: 1px solid rgba(255,255,255,0.45);
@@ -280,7 +442,11 @@ function Dashboard() {
           justify-content: center;
           font-size: 1.35rem;
           margin-bottom: 18px;
-          background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+          background: linear-gradient(
+            135deg,
+            #eff6ff 0%,
+            #dbeafe 100%
+          );
           color: #1d4ed8;
           border: 1px solid #dbeafe;
         }
@@ -298,10 +464,12 @@ function Dashboard() {
           margin-bottom: 0;
         }
 
+        /* ANIMATION */
         @keyframes dashboardFloat {
           0%, 100% {
             transform: translateY(0px) translateX(0px);
           }
+
           50% {
             transform: translateY(-18px) translateX(10px);
           }
@@ -311,11 +479,13 @@ function Dashboard() {
           0%, 100% {
             -webkit-transform: translateY(0px) translateX(0px);
           }
+
           50% {
             -webkit-transform: translateY(-18px) translateX(10px);
           }
         }
 
+        /* TABLET */
         @media (max-width: 991px) {
           .dashboard-hero-title {
             font-size: 2rem;
@@ -324,8 +494,13 @@ function Dashboard() {
           .dashboard-profile-title {
             font-size: 1.55rem;
           }
+
+          .dashboard-internship-title {
+            font-size: 1.65rem;
+          }
         }
 
+        /* MOBILE */
         @media (max-width: 767px) {
           .dashboard-page {
             padding: 22px 0;
@@ -342,111 +517,269 @@ function Dashboard() {
           .dashboard-feature-card {
             padding: 22px;
           }
+
+          .dashboard-internship-title {
+            font-size: 1.5rem;
+          }
+
+          .dashboard-internship-meta {
+            flex-direction: column;
+          }
+
+          .dashboard-internship-meta span {
+            width: 100%;
+          }
+
+          .dashboard-register-btn {
+            width: 100%;
+          }
         }
       `}</style>
 
       <div className="dashboard-page py-4 py-lg-5">
+
+        {/* Decorative Background Orbs */}
         <div className="dashboard-orb dashboard-orb-1"></div>
         <div className="dashboard-orb dashboard-orb-2"></div>
 
         <div className="container dashboard-shell">
+
+          {/* =========================================
+              HERO SECTION
+          ========================================= */}
           <div className="card dashboard-hero-card border-0 rounded-5 mb-4">
             <div className="card-body p-4 p-md-5">
+
               <div className="row g-4 align-items-center">
+
                 <div className="col-lg-8">
-                  <div className="dashboard-chip">Internova Premium Workspace</div>
+
+                  <div className="dashboard-chip">
+                    Internova Premium Workspace
+                  </div>
+
                   <h1 className="dashboard-hero-title">
                     Welcome to Internova, {user?.name || "User"} 👋
                   </h1>
+
                   <p className="dashboard-hero-subtitle">
-                    Track your learning progress, manage course access, download
-                     offer letters, complete mini tests, and generate verified
-                    certificates from one elegant dashboard.
+                    Track your learning progress, manage course access,
+                    download offer letters, complete mini tests, and generate
+                    verified certificates from one elegant dashboard.
                   </p>
+
                 </div>
 
                 <div className="col-lg-4">
+
                   <div className="row g-3">
+
                     <div className="col-6">
                       <div className="dashboard-stat-card">
-                        <div className="dashboard-stat-label">Account Role</div>
+
+                        <div className="dashboard-stat-label">
+                          Account Role
+                        </div>
+
                         <h4 className="dashboard-stat-value">
                           {user?.role || "User"}
                         </h4>
+
                       </div>
                     </div>
 
                     <div className="col-6">
                       <div className="dashboard-stat-card">
-                        <div className="dashboard-stat-label">Access Level</div>
+
+                        <div className="dashboard-stat-label">
+                          Access Level
+                        </div>
+
                         <h4 className="dashboard-stat-value">
                           {user?.role === "admin" ? "Admin" : "Member"}
                         </h4>
+
                       </div>
                     </div>
 
                     <div className="col-12">
                       <div className="dashboard-stat-card">
-                        <div className="dashboard-stat-label">Workspace</div>
-                        <h4 className="dashboard-stat-value">Learning Ready</h4>
+
+                        <div className="dashboard-stat-label">
+                          Workspace
+                        </div>
+
+                        <h4 className="dashboard-stat-value">
+                          Learning Ready
+                        </h4>
+
                       </div>
                     </div>
+
                   </div>
+
                 </div>
+
               </div>
+
             </div>
           </div>
 
+
+          {/* =========================================
+              INTERNSHIP REGISTRATION
+          ========================================= */}
+          <div className="card dashboard-internship-card border-0 rounded-5 mb-4">
+
+            <div className="card-body p-4 p-md-5 dashboard-internship-content">
+
+              <div className="dashboard-internship-badge">
+                🟢 Registration Open
+              </div>
+
+              <h2 className="dashboard-internship-title">
+                August – September Internship Batch
+              </h2>
+
+              <p className="dashboard-internship-text">
+                Registration is now open for the August–September Internship
+                Batch. Secure your seat and start your internship journey
+                with InternovaTech.
+              </p>
+
+              <div className="dashboard-internship-meta">
+
+                <span>
+                  📅 Batch: August – September
+                </span>
+
+                <span>
+                  🎓 Internship Program
+                </span>
+
+                <span>
+                  ⚡ Registration Open
+                </span>
+
+              </div>
+
+              <a
+                href="https://rzp.io/rzp/RkxJQTq"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dashboard-register-btn"
+                aria-label="Register for the August to September Internship Batch"
+              >
+                Register Now
+                <span aria-hidden="true">→</span>
+              </a>
+
+              <p className="dashboard-register-note">
+                You will be redirected to the secure Razorpay registration page.
+              </p>
+
+            </div>
+          </div>
+
+
+          {/* =========================================
+              PROFILE + QUICK ACTIONS
+          ========================================= */}
           <div className="row g-4 mb-4">
+
+            {/* PROFILE */}
             <div className="col-lg-7">
+
               <div className="card dashboard-glass-card border-0 rounded-5 h-100">
+
                 <div className="card-body p-4 p-md-5">
-                  <h2 className="dashboard-profile-title">Your Profile Overview</h2>
+
+                  <h2 className="dashboard-profile-title">
+                    Your Profile Overview
+                  </h2>
+
                   <p className="dashboard-profile-subtitle">
                     Keep track of your account details and access your full
                     learning workspace with a clean premium experience.
                   </p>
 
                   <div className="dashboard-info-grid">
+
                     <div className="dashboard-info-box">
-                      <div className="dashboard-info-label">Full Name</div>
+
+                      <div className="dashboard-info-label">
+                        Full Name
+                      </div>
+
                       <div className="dashboard-info-value">
                         {user?.name || "User"}
                       </div>
+
                     </div>
 
                     <div className="dashboard-info-box">
-                      <div className="dashboard-info-label">Email Address</div>
+
+                      <div className="dashboard-info-label">
+                        Email Address
+                      </div>
+
                       <div className="dashboard-info-value">
                         {user?.email || "N/A"}
                       </div>
+
                     </div>
 
                     <div className="dashboard-info-box">
-                      <div className="dashboard-info-label">Role</div>
+
+                      <div className="dashboard-info-label">
+                        Role
+                      </div>
+
                       <div className="dashboard-info-value">
                         {user?.role || "User"}
                       </div>
+
                     </div>
 
                     <div className="dashboard-info-box">
-                      <div className="dashboard-info-label">Status</div>
-                      <div className="dashboard-info-value">Active Account</div>
+
+                      <div className="dashboard-info-label">
+                        Status
+                      </div>
+
+                      <div className="dashboard-info-value">
+                        Active Account
+                      </div>
+
                     </div>
+
                   </div>
+
                 </div>
+
               </div>
+
             </div>
 
+
+            {/* QUICK ACTIONS */}
             <div className="col-lg-5">
+
               <div className="card dashboard-glass-card border-0 rounded-5 h-100">
+
                 <div className="card-body p-4 p-md-5">
-                  <h3 className="dashboard-panel-title">Quick Actions</h3>
+
+                  <h3 className="dashboard-panel-title">
+                    Quick Actions
+                  </h3>
+
                   <p className="dashboard-panel-subtitle">
-                    Access the most important sections of your Internova account instantly.
+                    Access the most important sections of your Internova
+                    account instantly.
                   </p>
 
                   <div className="d-grid gap-3">
+
                     <Link
                       to="/internships"
                       className="btn dashboard-action-btn dashboard-primary-btn"
@@ -468,6 +801,8 @@ function Dashboard() {
                       Verify Certificate
                     </Link>
 
+
+                    {/* ADMIN ACTIONS */}
                     {user?.role === "admin" && (
                       <>
                         <Link
@@ -486,53 +821,105 @@ function Dashboard() {
                       </>
                     )}
 
+
+                    {/* LOGOUT */}
                     <button
                       onClick={handleLogout}
                       className="btn btn-danger dashboard-action-btn"
                     >
                       Logout
                     </button>
+
                   </div>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
 
+
+          {/* =========================================
+              FEATURE CARDS
+          ========================================= */}
           <div className="row g-4">
+
+            {/* PROGRAMS */}
             <div className="col-md-4">
+
               <div className="dashboard-feature-card">
-                <div className="dashboard-feature-icon">🚀</div>
-                <h4 className="dashboard-feature-title">Programs</h4>
+
+                <div className="dashboard-feature-icon">
+                  🚀
+                </div>
+
+                <h4 className="dashboard-feature-title">
+                  Programs
+                </h4>
+
                 <p className="dashboard-feature-text">
-                  Browse domain-based Internship Programs with flexible durations,
-                  guided learning paths, and a clean premium experience.
+                  Browse domain-based Internship Programs with flexible
+                  durations, guided learning paths, and a clean premium
+                  experience.
                 </p>
+
               </div>
+
             </div>
 
+
+            {/* PROGRESS */}
             <div className="col-md-4">
+
               <div className="dashboard-feature-card">
-                <div className="dashboard-feature-icon">📈</div>
-                <h4 className="dashboard-feature-title">Progress</h4>
+
+                <div className="dashboard-feature-icon">
+                  📈
+                </div>
+
+                <h4 className="dashboard-feature-title">
+                  Progress
+                </h4>
+
                 <p className="dashboard-feature-text">
                   Open your course, track real learning progress, unlock mini
                   tests, and move toward certificate eligibility.
                 </p>
+
               </div>
+
             </div>
 
+
+            {/* CERTIFICATES */}
             <div className="col-md-4">
+
               <div className="dashboard-feature-card">
-                <div className="dashboard-feature-icon">🏆</div>
-                <h4 className="dashboard-feature-title">Certificates</h4>
+
+                <div className="dashboard-feature-icon">
+                  🏆
+                </div>
+
+                <h4 className="dashboard-feature-title">
+                  Certificates
+                </h4>
+
                 <p className="dashboard-feature-text">
-                  Generate, download, and verify official Internova certificates
-                  with branded document support and trusted validation.
+                  Generate, download, and verify official Internova
+                  certificates with branded document support and trusted
+                  validation.
                 </p>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
     </>
   );
