@@ -2114,7 +2114,7 @@ function AboutUs() {
                   Refund Policy
                 </Link>
               </div>
-            </section>
+            </section><br/><br/>
             <InternshipRegistration />
           </div>
         </div>

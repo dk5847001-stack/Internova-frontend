@@ -21,6 +21,7 @@ import CourseProgress from "./pages/CourseProgress";
 import QuizPage from "./pages/QuizPage";
 import CertificatePage from "./pages/CertificatePage";
 import VerifyCertificate from "./pages/VerifyCertificate";
+import VerifyOfferLetter from "./pages/VerifyOfferLetter";
 import AdminInternships from "./pages/AdminInternships";
 
 import RegistrationSuccess from "./pages/RegistrationSuccess";
@@ -125,6 +126,7 @@ function AppLayout() {
         {/* Public certificate verification */}
         <Route path="/verify" element={<VerifyCertificate />} />
         <Route path="/verify/:certificateId" element={<VerifyCertificate />} />
+        <Route path="/verify-offer-letter/:offerLetterId" element={<VerifyOfferLetter />} />
 
         {/* Admin routes */}
         <Route

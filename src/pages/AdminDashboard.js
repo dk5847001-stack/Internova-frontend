@@ -3,6 +3,7 @@ import API from "../services/api";
 import { Link } from "react-router-dom";
 import BrandLoader from "../components/BrandLoader";
 import AdminRegistrationManagement from "../components/AdminRegistrationManagement";
+import AdminOfferLetterManagement from "../components/AdminOfferLetterManagement";
 
 import {
   ResponsiveContainer,
@@ -1351,6 +1352,7 @@ function AdminDashboard() {
           </div>
 
           <AdminRegistrationManagement />
+          <AdminOfferLetterManagement />
 
           <div className="row g-4 mb-4">
             <div className="col-lg-6">

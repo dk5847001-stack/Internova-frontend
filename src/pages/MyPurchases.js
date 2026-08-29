@@ -163,7 +163,10 @@ function MyPurchases() {
       showToast("success", "Offer letter downloaded successfully");
     } catch (error) {
       console.error("Offer letter download error:", error);
-      showToast("error", "Offer letter download failed");
+      showToast(
+        "error",
+        error?.response?.data?.message || "Offer letter download failed"
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -969,15 +972,25 @@ function MyPurchases() {
                               <button
                                 className="myp-v2-btn-dark"
                                 onClick={() => handleDownloadOfferLetter(item)}
-                                disabled={downloadingId === item._id}
+                                disabled={downloadingId === item._id || !item.offerLetterAvailable}
+                                title={item.offerLetterAvailable ? "Download issued offer letter" : "Your offer letter will be available after iCAT, interview and final selection."}
                               >
                                 <span>⬇</span>
                                 <span>
                                   {downloadingId === item._id
                                     ? "Downloading..."
-                                    : "Offer Letter"}
+                                    : item.offerLetterAvailable
+                                    ? "Offer Letter"
+                                    : item.offerLetterStatus === "revoked"
+                                    ? "Offer Letter Revoked"
+                                    : "Offer Letter Pending"}
                                 </span>
                               </button>
+                              {!item.offerLetterAvailable && (
+                                <small className="d-block text-secondary mt-2">
+                                  Available after iCAT, online interview and final selection.
+                                </small>
+                              )}
                             </div>
 
                             <div className="col-md-6">
