@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import API from "../services/api";
+import API, { downloadProtectedPdf } from "../services/api";
 import { Link } from "react-router-dom";
 import BrandLoader from "../components/BrandLoader";
 import AdminRegistrationManagement from "../components/AdminRegistrationManagement";
@@ -693,6 +693,32 @@ function AdminDashboard() {
       showToast(
         "error",
         error?.response?.data?.message || "Failed to fetch certificate"
+      );
+    }
+  };
+
+  const handleAdminDocumentDownload = async (purchase, type) => {
+    const routes = {
+      paymentSlip: `/payments/slip/${purchase._id}`,
+      offerLetter: `/purchases/offer-letter/${purchase._id}`,
+      certificate: `/certificates/${purchase.certificate?.certificateId}/download`,
+    };
+    const labels = {
+      paymentSlip: "payment slip",
+      offerLetter: "offer letter",
+      certificate: "certificate",
+    };
+
+    try {
+      await downloadProtectedPdf(
+        routes[type],
+        `${(purchase.user?.name || "candidate").replace(/[^a-z0-9]/gi, "_")}_${labels[type].replace(/\s/g, "_")}.pdf`
+      );
+      showToast("success", `${labels[type]} downloaded successfully`);
+    } catch (error) {
+      showToast(
+        "error",
+        error?.response?.data?.message || `Failed to download ${labels[type]}`
       );
     }
   };
@@ -2357,6 +2383,32 @@ function AdminDashboard() {
                 </button>
 
                 <button
+                  className="btn btn-outline-primary admin-action-btn"
+                  onClick={() => handleAdminDocumentDownload(selectedPurchase, "paymentSlip")}
+                  disabled={!['paid', 'captured'].includes(String(selectedPurchase.paymentStatus).toLowerCase())}
+                >
+                  Download Payment Slip
+                </button>
+
+                <button
+                  className="btn btn-outline-primary admin-action-btn"
+                  onClick={() => handleAdminDocumentDownload(selectedPurchase, "offerLetter")}
+                  disabled={selectedPurchase.offerLetter?.status !== "issued"}
+                  title={selectedPurchase.offerLetter?.status === "issued" ? "Download official offer letter" : "No issued offer letter for this candidate"}
+                >
+                  Download Offer Letter
+                </button>
+
+                <button
+                  className="btn btn-outline-primary admin-action-btn"
+                  onClick={() => handleAdminDocumentDownload(selectedPurchase, "certificate")}
+                  disabled={!selectedPurchase.certificate?.certificateId}
+                  title={selectedPurchase.certificate?.certificateId ? "Download issued certificate" : "No issued certificate for this candidate"}
+                >
+                  Download Certificate
+                </button>
+
+                <button
                   className="btn btn-outline-dark admin-action-btn"
                   onClick={() => setSelectedPurchase(null)}
                 >
@@ -2442,6 +2494,10 @@ function AdminDashboard() {
                   </p>
                   <p className="mb-0">
                     <strong>ID:</strong> {selectedPurchase.certificate?.certificateId || "N/A"}
+                  </p>
+                  <p className="mb-0 mt-2">
+                    <strong>Offer Letter:</strong>{" "}
+                    {selectedPurchase.offerLetter?.status || "Not issued"}
                   </p>
                 </div>
               </div>
