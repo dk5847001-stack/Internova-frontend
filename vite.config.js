@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
     esbuild: {
       // This repo keeps JSX in .js files, so match CRA's permissive handling.
       loader: "jsx",
-      include: /src\/.*\.js$/,
+      include: /src\/.*\.(js|jsx)$/,
       exclude: [],
     },
     optimizeDeps: {

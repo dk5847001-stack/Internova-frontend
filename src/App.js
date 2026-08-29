@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -36,6 +36,8 @@ import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AdminDashboard from "./pages/AdminDashboard";
+
+const InternovaAIAgent = lazy(() => import("./components/InternovaAIAgent"));
 
 const HIDE_LAYOUT_ROUTES = new Set([
   "/login",
@@ -80,6 +82,7 @@ function AppLayout() {
         <Route path="/registrationSuccess" element={<RegistrationSuccess />} />
 
        <Route path="/internships/:id" element={<InternshipDetails />} />
+
 
         <Route
           path="/my-purchases"
@@ -152,6 +155,9 @@ function AppLayout() {
       </Routes>
 
       {!shouldHideLayout && <Footer />}
+      <Suspense fallback={null}>
+        <InternovaAIAgent />
+      </Suspense>
     </>
   );
 }

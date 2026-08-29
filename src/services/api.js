@@ -16,8 +16,6 @@ const normalizeApiBaseUrl = (value = "") => {
 };
 
 const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_BASE_URL);
-console.log("API_BASE_URL =", API_BASE_URL);
-console.log("ENV =", process.env.REACT_APP_API_BASE_URL);
 const API = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: false,
