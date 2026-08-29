@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import InternshipRegistration from "../components/InternshipRegistration";
 
 function AboutUs() {
   const [pointer, setPointer] = useState({ x: 50, y: 22 });
@@ -2114,6 +2115,7 @@ function AboutUs() {
                 </Link>
               </div>
             </section>
+            <InternshipRegistration />
           </div>
         </div>
       </div>

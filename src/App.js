@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Internships from "./pages/Internships";
 import InternshipDetails from "./pages/InternshipDetails";
 import MyPurchases from "./pages/MyPurchases";
+import MyRegistrations from "./pages/MyRegistrations";
 import CourseProgress from "./pages/CourseProgress";
 import QuizPage from "./pages/QuizPage";
 import CertificatePage from "./pages/CertificatePage";
@@ -92,6 +93,7 @@ function AppLayout() {
             </ProtectedRoute>
           }
         />
+        <Route path="/my-registrations" element={<ProtectedRoute><MyRegistrations /></ProtectedRoute>} />
 
         <Route
           path="/course/:internshipId"

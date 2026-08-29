@@ -5,14 +5,15 @@ function RegistrationSuccess() {
   const location = useLocation();
 
   const params = new URLSearchParams(location.search);
+  const registration = location.state?.registration || null;
 
   const paymentId =
-    params.get("razorpay_payment_id") ||
+    registration?.paymentStatus === "paid" ? "Paid (verified)" : params.get("razorpay_payment_id") ||
     params.get("payment_id") ||
     "Registration Confirmed";
 
   const registrationId =
-    params.get("registration_id") ||
+    registration?.registrationId || params.get("registration_id") ||
     params.get("registrationId") ||
     paymentId;
 
@@ -1559,7 +1560,7 @@ function RegistrationSuccess() {
                   </div>
 
                   <div className="detail-value">
-                    Internship Program
+                    {registration?.primaryDomain || "Internship Registration"}
                   </div>
 
                 </div>

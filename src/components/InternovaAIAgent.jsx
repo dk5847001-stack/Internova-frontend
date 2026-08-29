@@ -95,7 +95,7 @@ export default function InternovaAIAgent() {
       setConversationId(data.conversationId || conversationId);
       const links = Array.isArray(data.links)
         ? data.links
-            .filter((link) => typeof link?.label === "string" && /^\/[a-z0-9/_-]*$/i.test(link?.href || ""))
+            .filter((link) => typeof link?.label === "string" && /^\/[a-z0-9/_-]*(?:#[a-z0-9_-]+)?$/i.test(link?.href || ""))
             .slice(0, 2)
         : [];
       setMessages((current) => [...current, { id: createId(), role: "assistant", content: data.message, links, timestamp: Date.now() }]);
