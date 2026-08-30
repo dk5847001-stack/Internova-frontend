@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import InternshipRegistration from "../components/InternshipRegistration";
 import TeamSection from "../components/TeamSection";
+import CompanySection from "../components/CompanySection";
+import StudentSuccessSection from "../components/StudentSuccessSection";
 
 function AboutUs() {
   const [pointer, setPointer] = useState({ x: 50, y: 22 });
@@ -1768,6 +1770,8 @@ function AboutUs() {
               </div>
             </section>
 
+            <CompanySection />
+
             <section
               ref={(el) => {
                 setRevealRef(el, 1);
@@ -2016,6 +2020,8 @@ function AboutUs() {
                 </div>
               </div>
             </section><br/>
+
+            <StudentSuccessSection />
 
             <section
               ref={(el) => setRevealRef(el, 6)}
