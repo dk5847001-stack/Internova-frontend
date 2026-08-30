@@ -540,6 +540,14 @@ function AboutUs() {
           transform: translateY(${scrollY * 0.02}px);
         }
 
+        /* These transforms change only paint position, not document flow.
+           On long pages that made adjacent desktop sections overlap while scrolling. */
+        .home-v67-parallax-slow,
+        .home-v67-parallax-medium,
+        .home-v67-parallax-light {
+          transform: none !important;
+        }
+
         .home-v67-hero-wrap,
         .home-v67-glass-card,
         .home-v67-final-card,
@@ -1444,12 +1452,6 @@ function AboutUs() {
 
         @media (max-width: 767px) {
           .home-v67-page { padding: 22px 0 54px; }
-          /* Scroll-based transforms pull long mobile sections into each other. */
-          .home-v67-parallax-slow,
-          .home-v67-parallax-medium,
-          .home-v67-parallax-light {
-            transform: none !important;
-          }
           .home-v67-title { font-size: 2.02rem; }
           .home-v67-badge {
             width: 100%;

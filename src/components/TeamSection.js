@@ -8,48 +8,42 @@ export const teamMembers = [
   {
     name: "Aarav Mehta",
     role: "Founder & Product Lead",
-    image:
-      "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?auto=format&fit=crop&w=480&q=85",
+    initials: "AM", tone: "sky",
     github: "https://github.com/",
-    linkedin: "https://www.linkedin.com/",
+    linkedin: "linkedin.com/in/aarav-mehta-445959250",
   },
   {
     name: "Ananya Iyer",
     role: "Learning Experience Lead",
-    image:
-      "https://images.unsplash.com/photo-1598550874175-4d0ef436c909?auto=format&fit=crop&w=480&q=85",
+    initials: "AI", tone: "violet",
     github: "https://github.com/",
-    linkedin: "https://www.linkedin.com/",
+    linkedin: "linkedin.com/in/ananyaiyerpsychology",
   },
   {
     name: "Rohan Kapoor",
     role: "Engineering Lead",
-    image:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=480&q=85",
+    initials: "RK", tone: "teal",
     github: "https://github.com/",
-    linkedin: "https://www.linkedin.com/",
+    linkedin: "linkedin.com/in/rohan-kapoor-business-analyst",
   },
   {
     name: "Priya Nair",
     role: "Career Success Manager",
-    image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=480&q=85",
+    initials: "PN", tone: "rose",
     github: "https://github.com/",
-    linkedin: "https://www.linkedin.com/",
+    linkedin: "linkedin.com/in/priyanairunilever",
   },
   {
     name: "Kabir Sharma",
     role: "Full-Stack Developer",
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=480&q=85",
+    initials: "KS", tone: "amber",
     github: "https://github.com/",
     linkedin: "https://www.linkedin.com/",
   },
   {
     name: "Meera Joshi",
     role: "Community & Partnerships",
-    image:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=480&q=85",
+    initials: "MJ", tone: "indigo",
     github: "https://github.com/",
     linkedin: "https://www.linkedin.com/",
   },
@@ -58,8 +52,8 @@ export const teamMembers = [
 export function TeamCard({ member }) {
   return (
     <article className="team-section-card">
-      <div className="team-section-image-wrap">
-        <img className="team-section-image" src={member.image} alt={member.name} loading="lazy" />
+      <div className={`team-section-image-wrap team-section-avatar team-section-avatar--${member.tone}`} role="img" aria-label={member.name}>
+        <span>{member.initials}</span>
       </div>
       <h3>{member.name}</h3>
       <p>{member.role}</p>
