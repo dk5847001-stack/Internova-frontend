@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import InternshipRegistration from "../components/InternshipRegistration";
+import TeamSection from "../components/TeamSection";
 
 function AboutUs() {
   const [pointer, setPointer] = useState({ x: 50, y: 22 });
@@ -1441,6 +1442,12 @@ function AboutUs() {
 
         @media (max-width: 767px) {
           .home-v67-page { padding: 22px 0 54px; }
+          /* Scroll-based transforms pull long mobile sections into each other. */
+          .home-v67-parallax-slow,
+          .home-v67-parallax-medium,
+          .home-v67-parallax-light {
+            transform: none !important;
+          }
           .home-v67-title { font-size: 2.02rem; }
           .home-v67-badge {
             width: 100%;
@@ -2008,7 +2015,7 @@ function AboutUs() {
                   </div>
                 </div>
               </div>
-            </section>
+            </section><br/>
 
             <section
               ref={(el) => setRevealRef(el, 6)}
@@ -2116,6 +2123,7 @@ function AboutUs() {
               </div>
             </section><br/><br/>
             <InternshipRegistration />
+            <TeamSection />
           </div>
         </div>
       </div>
