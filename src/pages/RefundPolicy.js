@@ -1,5 +1,5 @@
 import React from "react";
-
+import InternshipRegistration from "../components/InternshipRegistration";
 function RefundPolicy() {
   return (
     <>
@@ -150,7 +150,8 @@ function RefundPolicy() {
             </div>
           </div>
         </div>
-      </div>
+      </div><br/>
+      <InternshipRegistration />
     </>
   );
 }

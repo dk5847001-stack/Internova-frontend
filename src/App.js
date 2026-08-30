@@ -38,6 +38,7 @@ import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AdminDashboard from "./pages/AdminDashboard";
+import PaidInternshipRegistration from "./pages/PaidInternshipRegisteration";
 
 const InternovaAIAgent = lazy(() => import("./components/InternovaAIAgent"));
 
@@ -62,7 +63,6 @@ function AppLayout() {
       <Routes>
         {/* Public SEO-friendly main homepage */}
         <Route path="/" element={<AboutUs />} />
-
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -83,7 +83,7 @@ function AppLayout() {
         <Route path="/internships" element={<Internships />} />
         <Route path="/registrationSuccess" element={<RegistrationSuccess />} />
 
-       <Route path="/internships/:id" element={<InternshipDetails />} />
+        <Route path="/internships/:id" element={<InternshipDetails />} />
 
 
         <Route
@@ -153,6 +153,7 @@ function AppLayout() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/refund-policy" element={<RefundPolicy />} />
+        <Route path="/internship-registration" element={<PaidInternshipRegistration/>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
