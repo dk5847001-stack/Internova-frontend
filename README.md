@@ -1,15 +1,7 @@
 
+npm run build
+npx cap sync android
 
-doc: update:21
-doc: update:22
-doc: update:23
-doc: update:24
-doc: update:25
-doc: update:26
-doc: update:27
-doc: update:28
-doc: update:29
-doc: update:30
 ===================
 # Getting Started with Create React App
 ok

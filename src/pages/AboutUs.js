@@ -4,6 +4,7 @@ import InternshipRegistration from "../components/InternshipRegistration";
 import TeamSection from "../components/TeamSection";
 import CompanySection from "../components/CompanySection";
 import StudentSuccessSection from "../components/StudentSuccessSection";
+import Download from "./Download";
 
 function AboutUs() {
   const [pointer, setPointer] = useState({ x: 50, y: 22 });
@@ -1603,6 +1604,7 @@ function AboutUs() {
           </div>
         )}
 
+
         <div className="home-v67-content">
           <div className="container home-v67-shell">
             <section
@@ -1771,7 +1773,7 @@ function AboutUs() {
                 </div>
               </div>
             </section>
-
+            <Download />
             <CompanySection />
 
             <section

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">InternovaTech</string>
+    <string name="title_activity_main">InternovaTech</string>
+    <string name="package_name">in.internovatech.app</string>
+    <string name="custom_url_scheme">in.internovatech.app</string>
+</resources>

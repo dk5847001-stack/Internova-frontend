@@ -15,7 +15,7 @@ const normalizeApiBaseUrl = (value = "") => {
   return trimmedValue.replace(/\/+$/, "");
 };
 
-const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_BASE_URL);
+const API_BASE_URL = "https://api.internovatech.in/api";
 const API = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: false,
