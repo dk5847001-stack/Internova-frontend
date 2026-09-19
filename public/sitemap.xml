@@ -21,15 +21,15 @@
   </url>
 
   <url>
-    <loc>https://www.internovatech.in/verify</loc>
+    <loc>https://www.internovatech.in/internships</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://www.internovatech.in/privacy-policy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://www.internovatech.in/verify</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 
   <url>
@@ -45,14 +45,8 @@
   </url>
 
   <url>
-    <loc>https://www.internovatech.in/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://www.internovatech.in/register</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://www.internovatech.in/privacy-policy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>
